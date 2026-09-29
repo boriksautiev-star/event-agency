@@ -1,0 +1,72 @@
+# === OS ===
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.DS_Store
+
+# === Node ===
+node_modules/
+dist/
+build/
+coverage/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# === Env / secrets ===
+.env
+.env.*
+!.env.example
+*.pem
+
+# === Firebase / Google ===
+firebase-admin-key.json
+**/firebase-admin-key.json
+**/google-services.json
+**/GoogleService-Info.plist
+
+# === EAS / mobile credentials ===
+**/credentials.json
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+
+# === Generated native folders (Expo prebuild) ===
+mobile/android/
+mobile/ios/
+
+# === Expo cache ===
+.expo/
+**/.expo/
+.expo-shared/
+
+# === AI tooling (personal) ===
+.claude/
+**/.claude/
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+**/AGENTS.md
+
+# === Server artifacts ===
+server/logs/
+server/dist/
+server/prisma/migrations/dev.db*
+
+# === One-off patch scripts (from dev sessions) ===
+patch-*.js
+**/patch-*.js
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tsbuildinfo
+
+# === Metro ===
+.metro-health-check*

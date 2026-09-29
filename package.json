@@ -1,0 +1,28 @@
+{
+  "name": "event-agency",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "server",
+    "admin-web",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:server": "npm --workspace server run dev",
+    "build:server": "npm --workspace server run build",
+    "db:migrate": "npm --workspace server run db:migrate",
+    "db:generate": "npm --workspace server run db:generate",
+    "db:seed": "npm --workspace server run db:seed",
+    "typecheck": "npm --workspace shared run typecheck && npm --workspace server run typecheck"
+  },
+  "trustedDependencies": [
+    "@prisma/client",
+    "@prisma/engines",
+    "prisma",
+    "esbuild"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}
