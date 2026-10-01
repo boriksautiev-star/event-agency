@@ -14,7 +14,9 @@
     "db:migrate": "npm --workspace server run db:migrate",
     "db:generate": "npm --workspace server run db:generate",
     "db:seed": "npm --workspace server run db:seed",
-    "typecheck": "npm --workspace shared run typecheck && npm --workspace server run typecheck"
+    "typecheck": "npm --workspace shared run typecheck && npm --workspace server run typecheck && npm --workspace admin-web run typecheck",
+    "dev:admin": "npm --workspace admin-web run dev",
+    "build:admin": "npm --workspace admin-web run build"
   },
   "trustedDependencies": [
     "@prisma/client",
