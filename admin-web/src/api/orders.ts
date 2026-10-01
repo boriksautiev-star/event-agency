@@ -64,3 +64,23 @@ export async function handoverFinalPayment(id: string): Promise<Order> {
   const { data } = await api.post<{ order: Order }>(`/orders/${id}/final-payment/handover`, {});
   return data.order;
 }
+
+export type OrderUpdatePatch = {
+  title?: string;
+  description?: string | null;
+  eventDate?: string;
+  startTime?: string;
+  endTime?: string;
+  address?: string | null;
+  comment?: string | null;
+  discountPercent?: number;
+  transportPolicy?: "agency_pays" | "client_one_way" | "client_both_ways";
+};
+
+export async function updateOrder(
+  id: string,
+  patch: OrderUpdatePatch,
+): Promise<Order> {
+  const { data } = await api.patch<{ order: Order }>(`/orders/${id}`, patch);
+  return data.order;
+}

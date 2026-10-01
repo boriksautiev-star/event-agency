@@ -3,6 +3,8 @@ import {
   fetchOrders,
   fetchOrderById,
   updateOrderStatus,
+  updateOrder,
+  OrderUpdatePatch,
   markPrepayment,
   markFinalPayment,
   unmarkFinalPayment,
@@ -67,4 +69,15 @@ export function useOrderFinance(orderId: string | undefined) {
   });
 
   return { prepayment, finalPayment, unmark, handover };
+}
+
+export function useUpdateOrder(orderId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: OrderUpdatePatch) => updateOrder(orderId!, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
 }

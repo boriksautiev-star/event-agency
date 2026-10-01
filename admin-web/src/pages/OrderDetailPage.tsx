@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { OrderStatus } from "../api/types";
 import {
@@ -17,6 +18,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { useOrder, useUpdateOrderStatus, useOrderFinance } from "../hooks/useOrders";
+import { OrderEditModal } from "../components/OrderEditModal";
 import { ORDER_STATUS_BADGE } from "../lib/orderStatus";
 import {
   ASSIGNMENT_BADGE,
@@ -31,6 +33,7 @@ export default function OrderDetailPage() {
   const { data: order, isLoading, isError, error } = useOrder(id);
   const statusMutation = useUpdateOrderStatus(id);
   const finance = useOrderFinance(id);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading) {
     return <div className="p-10 text-center text-gray-500">Загрузка…</div>;
@@ -94,9 +97,14 @@ export default function OrderDetailPage() {
           <span>/</span>
           <span className="text-gray-800 font-semibold">{order.title}</span>
         </div>
-        <Button variant="outline" size="sm" onClick={() => navigate("/orders")}>
-          ← К списку
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate("/orders")}>
+            ← К списку
+          </Button>
+          <Button size="sm" onClick={() => setEditOpen(true)}>
+            ✎ Редактировать
+          </Button>
+        </div>
       </div>
 
       {/* Действия со статусом */}
@@ -421,6 +429,11 @@ export default function OrderDetailPage() {
           )}
         </CardContent>
       </Card>
+      <OrderEditModal
+        order={order}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
     </div>
   );
 }
