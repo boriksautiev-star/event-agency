@@ -166,7 +166,7 @@ export default function OrderDetailPage() {
                 <TableRow>
                   <TableHead>Персонаж</TableHead>
                   <TableHead className="w-[80px] whitespace-nowrap">Длит.</TableHead>
-                  <TableHead className="w-[100px] text-right">Цена</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Цена</TableHead>
                   <TableHead>Аниматор</TableHead>
                   <TableHead className="w-[100px] text-right whitespace-nowrap">Выплата</TableHead>
                   <TableHead className="w-[110px]">Статус</TableHead>
@@ -185,11 +185,11 @@ export default function OrderDetailPage() {
                       <TableCell className="text-gray-500">
                         {s.rateDurationMinutes} мин
                       </TableCell>
-                      <TableCell className="text-right">{formatMoney(s.clientPrice)}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">{formatMoney(s.clientPrice)}</TableCell>
                       <TableCell>
                         {assignment ? (
                           <div>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-gray-900 whitespace-nowrap">
                               {assignment.animator.firstName} {assignment.animator.lastName}
                             </div>
                             <div className="text-xs text-gray-500 whitespace-nowrap">{assignment.animator.phone}</div>
@@ -198,7 +198,7 @@ export default function OrderDetailPage() {
                           <span className="text-xs text-gray-400">Не назначен</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right whitespace-nowrap">
                         {assignment ? formatMoney(assignment.payout) : "—"}
                       </TableCell>
                       <TableCell>
