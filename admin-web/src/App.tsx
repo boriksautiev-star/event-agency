@@ -4,6 +4,7 @@ import RequireAuth from "./components/RequireAuth";
 import AppLayout from "./layouts/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import OrdersPage from "./pages/OrdersPage";
 
 export default function App() {
   return (
@@ -14,7 +15,7 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route index element={<Navigate to="/orders" replace />} />
-            <Route path="/orders" element={<PlaceholderPage title="Заказы" />} />
+            <Route path="/orders" element={<OrdersPage />} />
             <Route path="/clients" element={<PlaceholderPage title="Клиенты" />} />
             <Route path="/catalog" element={<PlaceholderPage title="Справочники" note="Персонажи, группы, ставки" />} />
             <Route path="/finance" element={<PlaceholderPage title="Финансы" note="Поступления, выплаты, расходы" />} />
