@@ -140,10 +140,17 @@ export class OrdersService {
       if (query.dateTo) where.eventDate.lte = new Date(query.dateTo + "T23:59:59");
     }
 
+    if (query.createdFrom || query.createdTo) {
+      where.createdAt = {};
+      if (query.createdFrom) where.createdAt.gte = new Date(query.createdFrom);
+      if (query.createdTo) where.createdAt.lte = new Date(query.createdTo + "T23:59:59.999");
+    }
+
     if (query.search) {
       where.OR = [
         { title: { contains: query.search, mode: "insensitive" } },
         { address: { contains: query.search, mode: "insensitive" } },
+        { client: { name: { contains: query.search, mode: "insensitive" } } },
       ];
     }
 

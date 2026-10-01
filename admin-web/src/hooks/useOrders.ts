@@ -6,6 +6,8 @@ import {
   updateOrder,
   assignAnimator,
   addSlot,
+  createOrder,
+  CreateOrderPayload,
   updateSlot,
   deleteSlot,
   SlotInput,
@@ -157,6 +159,16 @@ export function useDeleteSlot(orderId: string | undefined) {
     mutationFn: (slotId: string) => deleteSlot(orderId!, slotId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useCreateOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateOrderPayload) => createOrder(payload),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
   });

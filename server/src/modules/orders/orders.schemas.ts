@@ -73,6 +73,8 @@ export const ListOrdersQuerySchema = z.object({
   statusIn: z.string().optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
+  createdFrom: z.string().optional(),
+  createdTo: z.string().optional(),
   clientId: z.string().uuid().optional(),
   animatorId: z.string().uuid().optional(),
   search: z.string().max(200).optional(),

@@ -5,6 +5,8 @@ export type OrdersQuery = {
   statusIn?: string;
   search?: string;
   dateFrom?: string;
+  createdFrom?: string;
+  createdTo?: string;
   dateTo?: string;
   limit?: number;
   offset?: number;
@@ -15,6 +17,8 @@ export async function fetchOrders(query: OrdersQuery): Promise<ListResponse<Orde
   if (query.statusIn) params.set("statusIn", query.statusIn);
   if (query.search) params.set("search", query.search);
   if (query.dateFrom) params.set("dateFrom", query.dateFrom);
+  if (query.createdFrom) params.set("createdFrom", query.createdFrom);
+  if (query.createdTo) params.set("createdTo", query.createdTo);
   if (query.dateTo) params.set("dateTo", query.dateTo);
   if (query.limit !== undefined) params.set("limit", String(query.limit));
   if (query.offset !== undefined) params.set("offset", String(query.offset));
@@ -138,4 +142,23 @@ export async function updateSlot(
 
 export async function deleteSlot(orderId: string, slotId: string): Promise<void> {
   await api.delete(`/orders/${orderId}/slots/${slotId}`);
+}
+
+export type CreateOrderPayload = {
+  clientId: string;
+  title: string;
+  description?: string | null;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  address?: string | null;
+  comment?: string | null;
+  discountPercent: number;
+  transportPolicy: "agency_pays" | "client_one_way" | "client_both_ways";
+  slots: SlotInput[];
+};
+
+export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
+  const { data } = await api.post<{ order?: Order } | Order>("/orders", payload);
+  return ((data as any).order ?? data) as Order;
 }

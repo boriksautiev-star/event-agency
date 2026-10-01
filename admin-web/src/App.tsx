@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
+import NewOrderPage from "./pages/NewOrderPage";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route index element={<Navigate to="/orders" replace />} />
             <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
             <Route path="/clients" element={<PlaceholderPage title="Клиенты" />} />
             <Route path="/catalog" element={<PlaceholderPage title="Справочники" note="Персонажи, группы, ставки" />} />
