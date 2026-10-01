@@ -1,6 +1,8 @@
 import { useNavigate, useParams } from "react-router-dom";
+import type { OrderStatus } from "../api/types";
 import {
   ASSIGNMENT_STATUS_LABELS,
+  ORDER_STATUS_FLOW,
   ORDER_STATUS_LABELS,
 } from "@event-agency/shared";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -14,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { useOrder } from "../hooks/useOrders";
+import { useOrder, useUpdateOrderStatus } from "../hooks/useOrders";
 import { ORDER_STATUS_BADGE } from "../lib/orderStatus";
 import {
   ASSIGNMENT_BADGE,
@@ -27,6 +29,7 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: order, isLoading, isError, error } = useOrder(id);
+  const statusMutation = useUpdateOrderStatus(id);
 
   if (isLoading) {
     return <div className="p-10 text-center text-gray-500">Загрузка…</div>;
@@ -48,6 +51,33 @@ export default function OrderDetailPage() {
   );
   const debt = Number(order.clientPrice) - Number(order.prepaymentAmount || 0);
 
+  const transitions = ORDER_STATUS_FLOW[order.status];
+
+  const STATUS_BUTTON: Record<OrderStatus, { variant: "default" | "destructive"; label: string }> = {
+    new: { variant: "default", label: "Новый" },
+    confirmed: { variant: "default", label: "Подтвердить" },
+    in_progress: { variant: "default", label: "В работу" },
+    completed: { variant: "default", label: "Выполнить" },
+    cancelled: { variant: "destructive", label: "Отменить" },
+  };
+
+  const handleStatusChange = (status: OrderStatus) => {
+    if (status === "cancelled") {
+      const ok = window.confirm(
+        "Отменить заказ? Откатить будет можно только сменой статуса вручную.",
+      );
+      if (!ok) return;
+    }
+    statusMutation.mutate(
+      { status },
+      {
+        onError: (e: any) => {
+          alert(e?.response?.data?.error ?? "Не удалось изменить статус");
+        },
+      },
+    );
+  };
+
   return (
     <div className="space-y-4 max-w-6xl">
       {/* Хлебные крошки + действия */}
@@ -67,6 +97,34 @@ export default function OrderDetailPage() {
           ← К списку
         </Button>
       </div>
+
+      {/* Действия со статусом */}
+      {transitions.length > 0 ? (
+        <Card>
+          <CardContent className="py-3 px-5 flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-gray-500 uppercase tracking-wide mr-1">
+              Перевести в:
+            </span>
+            {transitions.map((t) => {
+              const cfg = STATUS_BUTTON[t];
+              return (
+                <Button
+                  key={t}
+                  variant={cfg.variant}
+                  size="sm"
+                  disabled={statusMutation.isPending}
+                  onClick={() => handleStatusChange(t)}
+                >
+                  {cfg.label}
+                </Button>
+              );
+            })}
+            {statusMutation.isPending ? (
+              <span className="text-xs text-gray-500 ml-2">Обновление…</span>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Основное */}
       <Card>

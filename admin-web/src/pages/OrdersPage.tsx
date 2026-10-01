@@ -158,12 +158,12 @@ export default function OrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[110px]">Дата</TableHead>
-                  <TableHead className="w-[120px]">Время</TableHead>
-                  <TableHead>Название</TableHead>
+                  <TableHead className="whitespace-nowrap">Дата</TableHead>
+                  <TableHead className="whitespace-nowrap">Время</TableHead>
+                  <TableHead className="min-w-[200px]">Название</TableHead>
                   <TableHead>Клиент</TableHead>
-                  <TableHead className="w-[130px]">Статус</TableHead>
-                  <TableHead className="w-[120px] text-right">Цена</TableHead>
+                  <TableHead className="w-[120px]">Статус</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Цена</TableHead>
                   <TableHead className="w-[110px] text-center">Аниматоров</TableHead>
                 </TableRow>
               </TableHeader>
@@ -178,18 +178,20 @@ export default function OrdersPage() {
                       className="cursor-pointer"
                       onClick={() => navigate(`/orders/${o.id}`)}
                     >
-                      <TableCell className="font-medium">{formatDate(o.eventDate)}</TableCell>
-                      <TableCell className="text-gray-500">
+                      <TableCell className="font-medium whitespace-nowrap">{formatDate(o.eventDate)}</TableCell>
+                      <TableCell className="text-gray-500 whitespace-nowrap">
                         {formatTimeRange(o.startTime, o.endTime)}
                       </TableCell>
-                      <TableCell className="font-semibold text-gray-900">{o.title}</TableCell>
-                      <TableCell className="text-gray-600">{o.client?.name ?? "—"}</TableCell>
+                      <TableCell className="font-semibold text-gray-900">
+                        <span className="line-clamp-2">{o.title}</span>
+                      </TableCell>
+                      <TableCell className="text-gray-600 whitespace-nowrap">{o.client?.name ?? "—"}</TableCell>
                       <TableCell>
                         <Badge variant={ORDER_STATUS_BADGE[o.status]}>
                           {ORDER_STATUS_LABELS[o.status] ?? o.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-semibold">
+                      <TableCell className="text-right font-semibold whitespace-nowrap">
                         {formatMoney(o.clientPrice)}
                       </TableCell>
                       <TableCell className="text-center">

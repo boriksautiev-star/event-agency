@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { ListResponse, Order } from "./types";
+import type { ListResponse, Order, OrderStatus } from "./types";
 
 export type OrdersQuery = {
   statusIn?: string;
@@ -24,5 +24,16 @@ export async function fetchOrders(query: OrdersQuery): Promise<ListResponse<Orde
 
 export async function fetchOrderById(id: string): Promise<Order> {
   const { data } = await api.get<{ order: Order }>(`/orders/${id}`);
+  return data.order;
+}
+
+export async function updateOrderStatus(
+  id: string,
+  status: OrderStatus,
+  comment?: string,
+): Promise<Order> {
+  const body: Record<string, unknown> = { status };
+  if (comment) body.comment = comment;
+  const { data } = await api.patch<{ order: Order }>(`/orders/${id}/status`, body);
   return data.order;
 }
