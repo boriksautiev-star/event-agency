@@ -99,3 +99,28 @@ export type AnimatorAvailability = {
   phone: string;
   orders: AnimatorAvailabilityOrder[];
 };
+
+export type RateGroup = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+export type CharacterPriceOption = {
+  id: string;
+  characterId: string;
+  durationMin: number;
+  price: string | number;
+  isActive: boolean;
+};
+
+export type Character = {
+  id: string;
+  name: string;
+  rateGroupId: string;
+  notes: string | null;
+  isActive: boolean;
+  rateGroup?: { id: string; name: string };
+  priceOptions?: CharacterPriceOption[];
+};

@@ -5,6 +5,10 @@ import {
   updateOrderStatus,
   updateOrder,
   assignAnimator,
+  addSlot,
+  updateSlot,
+  deleteSlot,
+  SlotInput,
   updateAssignment,
   removeAssignment,
   OrderUpdatePatch,
@@ -117,6 +121,40 @@ export function useRemoveAssignment(orderId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (animatorId: string) => removeAssignment(orderId!, animatorId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useAddSlot(orderId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: SlotInput) => addSlot(orderId!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useUpdateSlot(orderId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { slotId: string; data: Partial<SlotInput> }) =>
+      updateSlot(orderId!, vars.slotId, vars.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useDeleteSlot(orderId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (slotId: string) => deleteSlot(orderId!, slotId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["order", orderId] });
       qc.invalidateQueries({ queryKey: ["orders"] });

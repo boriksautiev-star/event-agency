@@ -17,10 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { useOrder, useUpdateOrderStatus, useOrderFinance } from "../hooks/useOrders";
+import { useOrder, useUpdateOrderStatus, useOrderFinance, useDeleteSlot } from "../hooks/useOrders";
 import { OrderEditModal } from "../components/OrderEditModal";
 import { AnimatorPickerModal } from "../components/AnimatorPickerModal";
 import { AssignmentEditModal } from "../components/AssignmentEditModal";
+import { SlotEditModal } from "../components/SlotEditModal";
+import { Pencil, Trash2 } from "lucide-react";
 import { ORDER_STATUS_BADGE } from "../lib/orderStatus";
 import {
   ASSIGNMENT_BADGE,
@@ -35,7 +37,13 @@ export default function OrderDetailPage() {
   const { data: order, isLoading, isError, error } = useOrder(id);
   const statusMutation = useUpdateOrderStatus(id);
   const finance = useOrderFinance(id);
+  const deleteSlotMut = useDeleteSlot(id);
   const [editOpen, setEditOpen] = useState(false);
+  const [slotModal, setSlotModal] = useState<
+    | { kind: "add" }
+    | { kind: "edit"; slot: OrderSlot }
+    | null
+  >(null);
   const [pickerSlot, setPickerSlot] = useState<OrderSlot | null>(null);
   const [assignmentEdit, setAssignmentEdit] = useState<{
     animatorId: string;
@@ -91,6 +99,20 @@ export default function OrderDetailPage() {
       },
     );
   };
+
+  const handleDeleteSlot = (slot: OrderSlot) => {
+    const name = slot.character?.name ?? slot.characterNameSnapshot ?? "слот";
+    if (!window.confirm(`Удалить слот «${name}»?`)) return;
+    deleteSlotMut.mutate(slot.id, {
+      onError: (e: any) =>
+        alert(e?.response?.data?.error ?? "Не удалось удалить слот"),
+    });
+  };
+
+  const maxSortOrder = (order.slots ?? []).reduce(
+    (m, s) => Math.max(m, s.sortOrder),
+    -1,
+  );
 
   return (
     <div className="space-y-4 max-w-6xl">
@@ -342,7 +364,16 @@ export default function OrderDetailPage() {
       {/* Персонажи и программа */}
       <Card>
         <CardHeader>
-          <CardTitle>Персонажи и программа</CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle>Персонажи и программа</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSlotModal({ kind: "add" })}
+            >
+              + Добавить слот
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {(order.slots ?? []).length === 0 ? (
@@ -357,6 +388,7 @@ export default function OrderDetailPage() {
                   <TableHead>Аниматор</TableHead>
                   <TableHead className="w-[100px] text-right whitespace-nowrap">Выплата</TableHead>
                   <TableHead className="w-[110px]">Статус</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -423,6 +455,28 @@ export default function OrderDetailPage() {
                           <span className="text-xs text-gray-400">—</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!px-2"
+                            title="Изменить слот"
+                            onClick={() => setSlotModal({ kind: "edit", slot: s })}
+                          >
+                            <Pencil size={14} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!px-2 text-red-600 hover:text-red-700"
+                            title="Удалить слот"
+                            onClick={() => handleDeleteSlot(s)}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -484,6 +538,16 @@ export default function OrderDetailPage() {
           payoutSource={assignmentEdit.payoutSource}
           open
           onClose={() => setAssignmentEdit(null)}
+        />
+      ) : null}
+
+      {slotModal ? (
+        <SlotEditModal
+          orderId={order.id}
+          mode={slotModal}
+          maxSortOrder={maxSortOrder}
+          open
+          onClose={() => setSlotModal(null)}
         />
       ) : null}
 

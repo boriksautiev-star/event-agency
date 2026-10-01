@@ -111,3 +111,31 @@ export async function removeAssignment(
 ): Promise<void> {
   await api.delete(`/orders/${orderId}/animators/${animatorId}`);
 }
+
+export type SlotInput = {
+  characterId: string;
+  rateDurationMinutes: number;
+  clientPrice: number;
+  isCustomPrice: boolean;
+  sortOrder: number;
+};
+
+export async function addSlot(orderId: string, data: SlotInput): Promise<Order> {
+  const { data: res } = await api.post<{ order?: Order; slot?: any } | Order>(
+    `/orders/${orderId}/slots`,
+    data,
+  );
+  return ((res as any).order ?? res) as Order;
+}
+
+export async function updateSlot(
+  orderId: string,
+  slotId: string,
+  data: Partial<SlotInput>,
+): Promise<void> {
+  await api.patch(`/orders/${orderId}/slots/${slotId}`, data);
+}
+
+export async function deleteSlot(orderId: string, slotId: string): Promise<void> {
+  await api.delete(`/orders/${orderId}/slots/${slotId}`);
+}
