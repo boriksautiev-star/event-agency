@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { useOrder, useUpdateOrderStatus } from "../hooks/useOrders";
+import { useOrder, useUpdateOrderStatus, useOrderFinance } from "../hooks/useOrders";
 import { ORDER_STATUS_BADGE } from "../lib/orderStatus";
 import {
   ASSIGNMENT_BADGE,
@@ -30,6 +30,7 @@ export default function OrderDetailPage() {
   const navigate = useNavigate();
   const { data: order, isLoading, isError, error } = useOrder(id);
   const statusMutation = useUpdateOrderStatus(id);
+  const finance = useOrderFinance(id);
 
   if (isLoading) {
     return <div className="p-10 text-center text-gray-500">Загрузка…</div>;
@@ -207,9 +208,119 @@ export default function OrderDetailPage() {
               valueClass="text-emerald-600"
             />
           ) : null}
+
+          <div className="border-t border-gray-100 my-2" />
+
+          {/* Управление предоплатой */}
+          {Number(order.prepaymentAmount) > 0 ? (
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              {!order.prepaymentPaidAt ? (
+                <Button
+                  size="sm"
+                  disabled={finance.prepayment.isPending}
+                  onClick={() =>
+                    finance.prepayment.mutate(true, {
+                      onError: (e: any) =>
+                        alert(e?.response?.data?.error ?? "Не удалось"),
+                    })
+                  }
+                >
+                  ✓ Отметить предоплату
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={finance.prepayment.isPending}
+                  onClick={() => {
+                    if (!window.confirm("Снять отметку предоплаты?")) return;
+                    finance.prepayment.mutate(false, {
+                      onError: (e: any) =>
+                        alert(e?.response?.data?.error ?? "Не удалось"),
+                    });
+                  }}
+                >
+                  Снять отметку предоплаты
+                </Button>
+              )}
+            </div>
+          ) : null}
+
+          {/* Управление финалом */}
+          {Number(order.finalPaymentAmount) > 0 ? (
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              {!order.finalPaymentReceivedAt ? (
+                <>
+                  <span className="text-xs text-gray-500 mr-1">Принять финал:</span>
+                  <Button
+                    size="sm"
+                    disabled={finance.finalPayment.isPending}
+                    onClick={() =>
+                      finance.finalPayment.mutate("cash", {
+                        onError: (e: any) =>
+                          alert(e?.response?.data?.error ?? "Не удалось"),
+                      })
+                    }
+                  >
+                    Наличными
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={finance.finalPayment.isPending}
+                    onClick={() =>
+                      finance.finalPayment.mutate("transfer", {
+                        onError: (e: any) =>
+                          alert(e?.response?.data?.error ?? "Не удалось"),
+                      })
+                    }
+                  >
+                    Переводом
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {!order.finalPaymentHandedAt ? (
+                    <>
+                      <Button
+                        size="sm"
+                        disabled={finance.handover.isPending}
+                        onClick={() =>
+                          finance.handover.mutate(undefined, {
+                            onError: (e: any) =>
+                              alert(e?.response?.data?.error ?? "Не удалось"),
+                          })
+                        }
+                      >
+                        {order.finalPaymentMethod === "cash"
+                          ? "Сдал в кассу"
+                          : "Сверить по выписке"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={finance.unmark.isPending}
+                        onClick={() => {
+                          if (!window.confirm("Отменить отметку получения финала?")) return;
+                          finance.unmark.mutate(undefined, {
+                            onError: (e: any) =>
+                              alert(e?.response?.data?.error ?? "Не удалось"),
+                          });
+                        }}
+                      >
+                        Отменить отметку
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-sm text-emerald-600 font-medium">
+                      ✓ Финал полностью закрыт
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
-
       {/* Персонажи и программа */}
       <Card>
         <CardHeader>

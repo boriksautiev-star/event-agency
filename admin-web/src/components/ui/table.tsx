@@ -33,14 +33,14 @@ TableRow.displayName = "TableRow";
 
 export const TableHead = forwardRef<HTMLTableCellElement, ThHTMLAttributes<HTMLTableCellElement>>(
   ({ className, ...props }, ref) => (
-    <th ref={ref} className={cn("h-11 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide", className)} {...props} />
+    <th ref={ref} className={cn("h-10 px-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide", className)} {...props} />
   ),
 );
 TableHead.displayName = "TableHead";
 
 export const TableCell = forwardRef<HTMLTableCellElement, TdHTMLAttributes<HTMLTableCellElement>>(
   ({ className, ...props }, ref) => (
-    <td ref={ref} className={cn("px-4 py-3 text-sm text-gray-800 align-middle", className)} {...props} />
+    <td ref={ref} className={cn("px-3 py-2 text-sm text-gray-800 align-middle", className)} {...props} />
   ),
 );
 TableCell.displayName = "TableCell";

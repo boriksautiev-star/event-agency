@@ -158,13 +158,13 @@ export default function OrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">Дата</TableHead>
-                  <TableHead className="whitespace-nowrap">Время</TableHead>
-                  <TableHead className="min-w-[200px]">Название</TableHead>
+                  <TableHead className="w-[100px] whitespace-nowrap">Дата</TableHead>
+                  <TableHead className="w-[110px] whitespace-nowrap">Время</TableHead>
+                  <TableHead>Название</TableHead>
                   <TableHead>Клиент</TableHead>
-                  <TableHead className="w-[120px]">Статус</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Цена</TableHead>
-                  <TableHead className="w-[110px] text-center">Аниматоров</TableHead>
+                  <TableHead className="w-[130px]">Статус</TableHead>
+                  <TableHead className="w-[110px] text-right whitespace-nowrap">Цена</TableHead>
+                  <TableHead className="w-[90px] text-center whitespace-nowrap">Аним.</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

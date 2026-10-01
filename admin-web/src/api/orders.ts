@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { ListResponse, Order, OrderStatus } from "./types";
+import type { ListResponse, Order, OrderStatus, PaymentMethod } from "./types";
 
 export type OrdersQuery = {
   statusIn?: string;
@@ -35,5 +35,32 @@ export async function updateOrderStatus(
   const body: Record<string, unknown> = { status };
   if (comment) body.comment = comment;
   const { data } = await api.patch<{ order: Order }>(`/orders/${id}/status`, body);
+  return data.order;
+}
+
+export async function markPrepayment(id: string, paid: boolean): Promise<Order> {
+  const { data } = await api.patch<{ order: Order }>(`/orders/${id}`, {
+    prepaymentPaid: paid,
+  });
+  return data.order;
+}
+
+export async function markFinalPayment(
+  id: string,
+  method: PaymentMethod,
+): Promise<Order> {
+  const { data } = await api.post<{ order: Order }>(`/orders/${id}/final-payment`, {
+    method,
+  });
+  return data.order;
+}
+
+export async function unmarkFinalPayment(id: string): Promise<Order> {
+  const { data } = await api.delete<{ order: Order }>(`/orders/${id}/final-payment`);
+  return data.order;
+}
+
+export async function handoverFinalPayment(id: string): Promise<Order> {
+  const { data } = await api.post<{ order: Order }>(`/orders/${id}/final-payment/handover`, {});
   return data.order;
 }
