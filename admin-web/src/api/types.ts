@@ -79,3 +79,23 @@ export type ListResponse<T> = {
   limit: number;
   offset: number;
 };
+
+export type AnimatorAvailabilityOrder = {
+  orderId: string;
+  title: string;
+  clientName: string | null;
+  address: string | null;
+  startTime: string;
+  endTime: string;
+  orderStatus: OrderStatus;
+  assignmentStatus: "invited" | "accepted" | "declined" | "removed" | "completed";
+  slots: { characterName: string; durationMin: number }[];
+};
+
+export type AnimatorAvailability = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  orders: AnimatorAvailabilityOrder[];
+};

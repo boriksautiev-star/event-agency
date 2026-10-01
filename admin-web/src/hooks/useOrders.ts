@@ -4,6 +4,9 @@ import {
   fetchOrderById,
   updateOrderStatus,
   updateOrder,
+  assignAnimator,
+  updateAssignment,
+  removeAssignment,
   OrderUpdatePatch,
   markPrepayment,
   markFinalPayment,
@@ -75,6 +78,45 @@ export function useUpdateOrder(orderId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (patch: OrderUpdatePatch) => updateOrder(orderId!, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useAssignAnimator(orderId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { animatorId: string; slotId: string; payout?: number }) =>
+      assignAnimator(orderId!, vars),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useUpdateAssignment(orderId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: {
+      animatorId: string;
+      payout?: number;
+      status?: string;
+      comment?: string;
+    }) => updateAssignment(orderId!, vars.animatorId, vars),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useRemoveAssignment(orderId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (animatorId: string) => removeAssignment(orderId!, animatorId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["order", orderId] });
       qc.invalidateQueries({ queryKey: ["orders"] });

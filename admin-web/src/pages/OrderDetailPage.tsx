@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { OrderStatus } from "../api/types";
+import type { OrderStatus, OrderSlot } from "../api/types";
 import {
   ASSIGNMENT_STATUS_LABELS,
   ORDER_STATUS_FLOW,
@@ -19,6 +19,8 @@ import {
 } from "../components/ui/table";
 import { useOrder, useUpdateOrderStatus, useOrderFinance } from "../hooks/useOrders";
 import { OrderEditModal } from "../components/OrderEditModal";
+import { AnimatorPickerModal } from "../components/AnimatorPickerModal";
+import { AssignmentEditModal } from "../components/AssignmentEditModal";
 import { ORDER_STATUS_BADGE } from "../lib/orderStatus";
 import {
   ASSIGNMENT_BADGE,
@@ -34,6 +36,13 @@ export default function OrderDetailPage() {
   const statusMutation = useUpdateOrderStatus(id);
   const finance = useOrderFinance(id);
   const [editOpen, setEditOpen] = useState(false);
+  const [pickerSlot, setPickerSlot] = useState<OrderSlot | null>(null);
+  const [assignmentEdit, setAssignmentEdit] = useState<{
+    animatorId: string;
+    animatorName: string;
+    payout: number;
+    payoutSource: "rate_matrix" | "manual";
+  } | null>(null);
 
   if (isLoading) {
     return <div className="p-10 text-center text-gray-500">Загрузка…</div>;
@@ -54,6 +63,7 @@ export default function OrderDetailPage() {
     0,
   );
   const debt = Number(order.clientPrice) - Number(order.prepaymentAmount || 0);
+  const eventDateYmd = order.eventDate.slice(0, 10);
 
   const transitions = ORDER_STATUS_FLOW[order.status];
 
@@ -365,14 +375,40 @@ export default function OrderDetailPage() {
                       <TableCell className="text-right whitespace-nowrap">{formatMoney(s.clientPrice)}</TableCell>
                       <TableCell>
                         {assignment ? (
-                          <div>
-                            <div className="font-medium text-gray-900 whitespace-nowrap">
-                              {assignment.animator.firstName} {assignment.animator.lastName}
+                          <div className="flex items-center gap-2">
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-900 whitespace-nowrap">
+                                {assignment.animator.firstName} {assignment.animator.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500 whitespace-nowrap">
+                                {assignment.animator.phone}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 whitespace-nowrap">{assignment.animator.phone}</div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="!px-2"
+                              onClick={() =>
+                                setAssignmentEdit({
+                                  animatorId: assignment.animatorId,
+                                  animatorName: `${assignment.animator.firstName} ${assignment.animator.lastName}`,
+                                  payout: Number(assignment.payout),
+                                  payoutSource: assignment.payoutSource,
+                                })
+                              }
+                              title="Изменить выплату"
+                            >
+                              ✎
+                            </Button>
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400">Не назначен</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPickerSlot(s)}
+                          >
+                            + Назначить
+                          </Button>
                         )}
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap">
@@ -429,6 +465,28 @@ export default function OrderDetailPage() {
           )}
         </CardContent>
       </Card>
+      <AnimatorPickerModal
+        orderId={order.id}
+        date={eventDateYmd}
+        startTime={order.startTime}
+        endTime={order.endTime}
+        slot={pickerSlot}
+        open={!!pickerSlot}
+        onClose={() => setPickerSlot(null)}
+      />
+
+      {assignmentEdit ? (
+        <AssignmentEditModal
+          orderId={order.id}
+          animatorId={assignmentEdit.animatorId}
+          animatorName={assignmentEdit.animatorName}
+          initialPayout={assignmentEdit.payout}
+          payoutSource={assignmentEdit.payoutSource}
+          open
+          onClose={() => setAssignmentEdit(null)}
+        />
+      ) : null}
+
       <OrderEditModal
         order={order}
         open={editOpen}

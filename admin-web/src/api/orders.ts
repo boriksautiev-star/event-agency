@@ -84,3 +84,30 @@ export async function updateOrder(
   const { data } = await api.patch<{ order: Order }>(`/orders/${id}`, patch);
   return data.order;
 }
+
+export async function assignAnimator(
+  orderId: string,
+  data: { animatorId: string; slotId: string; payout?: number },
+): Promise<Order> {
+  const { data: res } = await api.post<{ order?: Order } | Order>(
+    `/orders/${orderId}/animators`,
+    data,
+  );
+  // Ответ может быть как { order }, так и голым объектом — нормализуем
+  return ((res as any).order ?? res) as Order;
+}
+
+export async function updateAssignment(
+  orderId: string,
+  animatorId: string,
+  patch: { payout?: number; status?: string; comment?: string },
+): Promise<void> {
+  await api.patch(`/orders/${orderId}/animators/${animatorId}`, patch);
+}
+
+export async function removeAssignment(
+  orderId: string,
+  animatorId: string,
+): Promise<void> {
+  await api.delete(`/orders/${orderId}/animators/${animatorId}`);
+}
