@@ -70,3 +70,6 @@ patch-*.js
 
 # === Metro ===
 .metro-health-check*
+# === One-off scaffold scripts ===
+scaffold-*.js
+add-*-scripts.js
