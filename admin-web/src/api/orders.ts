@@ -21,3 +21,8 @@ export async function fetchOrders(query: OrdersQuery): Promise<ListResponse<Orde
   const { data } = await api.get<ListResponse<Order>>(`/orders?${params.toString()}`);
   return data;
 }
+
+export async function fetchOrderById(id: string): Promise<Order> {
+  const { data } = await api.get<{ order: Order }>(`/orders/${id}`);
+  return data.order;
+}

@@ -290,7 +290,14 @@ export class OrdersService {
       throw new AppError("Нет доступа к заказу", 403, "FORBIDDEN");
     }
 
-    return order;
+    const firstAccepted = (order.animators ?? [])
+      .filter((a: any) => a.respondedAt && a.status !== "declined" && a.status !== "removed")
+      .sort((a: any, b: any) => +new Date(a.respondedAt) - +new Date(b.respondedAt))[0];
+    return {
+      ...order,
+      acceptedAt: firstAccepted?.respondedAt ?? null,
+      acceptedBy: firstAccepted?.animatorId ?? null,
+    };
   }
 
   private static async logChange(
