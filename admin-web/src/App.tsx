@@ -9,6 +9,7 @@ import OrderDetailPage from "./pages/OrderDetailPage";
 import NewOrderPage from "./pages/NewOrderPage";
 import CatalogLayout from "./pages/catalog/CatalogLayout";
 import GroupsPage from "./pages/catalog/GroupsPage";
+import CharactersPage from "./pages/catalog/CharactersPage";
 
 export default function App() {
   return (
@@ -26,7 +27,7 @@ export default function App() {
             <Route path="/catalog" element={<CatalogLayout />}>
               <Route index element={<Navigate to="/catalog/groups" replace />} />
               <Route path="groups" element={<GroupsPage />} />
-              <Route path="characters" element={<PlaceholderPage title="Персонажи" note="Раздел в разработке" />} />
+              <Route path="characters" element={<CharactersPage />} />
               <Route path="rates" element={<PlaceholderPage title="Матрица ставок" note="Раздел в разработке" />} />
             </Route>
             <Route path="/finance" element={<PlaceholderPage title="Финансы" note="Поступления, выплаты, расходы" />} />
