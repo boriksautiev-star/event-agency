@@ -2,11 +2,11 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
 const TABS = [
-  { to: "/catalog/groups", label: "Группы" },
-  { to: "/catalog/characters", label: "Персонажи" },
+  { to: "/animators/list", label: "Аниматоры" },
+  { to: "/animators/rates", label: "Матрица ставок" },
 ];
 
-export default function CatalogLayout() {
+export default function AnimatorsLayout() {
   return (
     <div className="space-y-4">
       <div className="border-b border-gray-200">

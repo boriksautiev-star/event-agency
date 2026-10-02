@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { RATE_DURATIONS, formatDuration } from "@event-agency/shared";
 import { useRateGroups } from "../../hooks/useRateGroups";
 import { useAnimatorsList } from "../../hooks/useAnimatorsList";
@@ -17,6 +18,8 @@ function cellKey(rateGroupId: string, durationMin: number): string {
 export default function RatesMatrixPage() {
   const { data: groups = [] } = useRateGroups(true);
   const { data: animators = [] } = useAnimatorsList();
+  const [searchParams] = useSearchParams();
+  const focusAnimatorId = searchParams.get("animatorId");
   const saveMut = useSaveMatrix();
 
   // Активные группы, отсортированные
@@ -30,8 +33,9 @@ export default function RatesMatrixPage() {
     () =>
       animators
         .filter((a) => a.status === "active")
+        .filter((a) => !focusAnimatorId || a.id === focusAnimatorId)
         .sort((a, b) => a.lastName.localeCompare(b.lastName)),
-    [animators],
+    [animators, focusAnimatorId],
   );
 
   const [currentGroupId, setCurrentGroupId] = useState<string>("");
@@ -210,6 +214,19 @@ export default function RatesMatrixPage() {
 
   return (
     <div className="space-y-4">
+      {focusAnimatorId && activeAnimators.length === 1 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-sm text-amber-800 flex items-center justify-between gap-3 flex-wrap">
+          <span>
+            Показан только: <span className="font-semibold">
+              {activeAnimators[0].lastName} {activeAnimators[0].firstName}
+            </span>
+          </span>
+          <Link to="/animators/rates" className="text-xs text-primary hover:underline font-semibold">
+            Показать всех
+          </Link>
+        </div>
+      ) : null}
+
       {/* Табы групп */}
       <div className="border-b border-gray-200">
         <nav className="flex gap-1 -mb-px flex-wrap">
