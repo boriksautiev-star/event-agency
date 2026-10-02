@@ -7,6 +7,8 @@ import PlaceholderPage from "./pages/PlaceholderPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import NewOrderPage from "./pages/NewOrderPage";
+import ClientsPage from "./pages/clients/ClientsPage";
+import ClientDetailPage from "./pages/clients/ClientDetailPage";
 import CatalogLayout from "./pages/catalog/CatalogLayout";
 import GroupsPage from "./pages/catalog/GroupsPage";
 import CharactersPage from "./pages/catalog/CharactersPage";
@@ -26,7 +28,8 @@ export default function App() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
-            <Route path="/clients" element={<PlaceholderPage title="Клиенты" />} />
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/clients/:id" element={<ClientDetailPage />} />
             <Route path="/animators" element={<AnimatorsLayout />}>
               <Route index element={<Navigate to="/animators/list" replace />} />
               <Route path="list" element={<AnimatorsListPage />} />
