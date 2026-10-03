@@ -15,6 +15,7 @@ import {
   UpdateSlotInput,
 } from "./orders.schemas";
 import { RatesService } from "../rates/rates.service";
+import { AdminAccrualService } from "../admin-payroll/admin-payroll.service";
 
 
 function calcFinalPayment(clientPrice: number, prepayment: number, prepaymentPaid: boolean) {
@@ -602,6 +603,9 @@ export class OrdersService {
 
       await this.syncOrderPayments(tx, id, changedBy);
       return updated;
+    }).then(async (r) => {
+      await AdminAccrualService.syncForOrder(id).catch(() => {});
+      return r;
     });
   }
 
@@ -638,6 +642,9 @@ export class OrdersService {
       });
 
       return updated;
+    }).then(async (r) => {
+      await AdminAccrualService.syncForOrder(id).catch(() => {});
+      return r;
     });
   }
 
@@ -673,6 +680,7 @@ export class OrdersService {
       "Добавлен слот",
     );
 
+    await AdminAccrualService.syncForOrder(orderId).catch(() => {});
     return slot;
   }
 
@@ -736,6 +744,7 @@ export class OrdersService {
       }
     }
 
+    await AdminAccrualService.syncForOrder(orderId).catch(() => {});
     return { ok: true, affectedAssignments: affected };
   }
 
@@ -760,6 +769,7 @@ export class OrdersService {
 
     await prisma.orderSlot.delete({ where: { id: slotId } });
     await this.recalcOrderTotals(prisma, orderId);
+    await AdminAccrualService.syncForOrder(orderId).catch(() => {});
     return { ok: true };
   }
 
@@ -1214,6 +1224,9 @@ export class OrdersService {
       );
 
       return updated;
+    }).then(async (r) => {
+      await AdminAccrualService.syncForOrder(orderId).catch(() => {});
+      return r;
     });
   }
 }

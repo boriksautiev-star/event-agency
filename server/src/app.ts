@@ -16,6 +16,7 @@ import rateGroupsRoutes from "./modules/rate-groups/rate-groups.routes";
 import charactersRoutes from "./modules/characters/characters.routes";
 import ratesRoutes from "./modules/rates/rates.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
+import adminPayrollRoutes from "./modules/admin-payroll/admin-payroll.routes";
 
 export function createApp() {
   const app = express();
@@ -41,6 +42,7 @@ export function createApp() {
   app.use("/api/characters", charactersRoutes);
   app.use("/api/rates", ratesRoutes);
   app.use("/api/settings", settingsRoutes);
+  app.use("/api/admin-payroll", adminPayrollRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
