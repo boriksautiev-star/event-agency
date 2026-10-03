@@ -3,11 +3,15 @@ import { AuthProvider } from "./auth/AuthContext";
 import RequireAuth from "./components/RequireAuth";
 import AppLayout from "./layouts/AppLayout";
 import LoginPage from "./pages/LoginPage";
-import PlaceholderPage from "./pages/PlaceholderPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import NewOrderPage from "./pages/NewOrderPage";
 import ClientsPage from "./pages/clients/ClientsPage";
+import FinanceLayout from "./pages/finance/FinanceLayout";
+import FinanceOverviewPage from "./pages/finance/FinanceOverviewPage";
+import FinancePayoutsPage from "./pages/finance/FinancePayoutsPage";
+import FinanceExpensesPage from "./pages/finance/FinanceExpensesPage";
+import FinancePaymentsPage from "./pages/finance/FinancePaymentsPage";
 import ClientDetailPage from "./pages/clients/ClientDetailPage";
 import CatalogLayout from "./pages/catalog/CatalogLayout";
 import GroupsPage from "./pages/catalog/GroupsPage";
@@ -44,7 +48,13 @@ export default function App() {
               <Route path="groups" element={<GroupsPage />} />
               <Route path="characters" element={<CharactersPage />} />
             </Route>
-            <Route path="/finance" element={<PlaceholderPage title="Финансы" note="Поступления, выплаты, расходы" />} />
+            <Route path="/finance" element={<FinanceLayout />}>
+              <Route index element={<Navigate to="/finance/overview" replace />} />
+              <Route path="overview" element={<FinanceOverviewPage />} />
+              <Route path="payouts" element={<FinancePayoutsPage />} />
+              <Route path="expenses" element={<FinanceExpensesPage />} />
+              <Route path="payments" element={<FinancePaymentsPage />} />
+            </Route>
           </Route>
         </Route>
 
