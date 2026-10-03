@@ -1,19 +1,30 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 import { cn } from "../../lib/utils";
 
-const TABS = [
+type Tab = { to: string; label: string };
+
+const DIRECTOR_TABS: Tab[] = [
   { to: "/finance/overview", label: "Обзор" },
   { to: "/finance/payouts", label: "Выплаты" },
   { to: "/finance/expenses", label: "Расходы" },
   { to: "/finance/payments", label: "Поступления" },
 ];
 
+const ADMIN_TABS: Tab[] = [
+  { to: "/finance/me-orders", label: "Мои заказы" },
+  { to: "/finance/me-ledger", label: "Мои начисления" },
+];
+
 export default function FinanceLayout() {
+  const { user } = useAuth();
+  const tabs = user?.role === "admin" ? ADMIN_TABS : DIRECTOR_TABS;
+
   return (
     <div className="space-y-4">
       <div className="border-b border-gray-200">
         <nav className="flex gap-1 -mb-px">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <NavLink
               key={t.to}
               to={t.to}

@@ -12,6 +12,8 @@ import {
   SetCompensationInput,
   FixedAccrualInput,
   CreatePaymentInput,
+  fetchMeSummary,
+  fetchMeLedger,
 } from "../api/adminPayroll";
 
 export function useAdmins() {
@@ -99,5 +101,21 @@ export function useRemovePayment(id: string) {
   return useMutation({
     mutationFn: (paymentId: string) => removePayment(paymentId),
     onSuccess: () => invalidate(qc, id),
+  });
+}
+
+export function useMeSummary(params: { from?: string; to?: string }) {
+  return useQuery({
+    queryKey: ["admin-payroll", "me-summary", params],
+    queryFn: () => fetchMeSummary(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useMeLedger(params: { from?: string; to?: string }) {
+  return useQuery({
+    queryKey: ["admin-payroll", "me-ledger", params],
+    queryFn: () => fetchMeLedger(params),
+    staleTime: 30_000,
   });
 }

@@ -12,6 +12,9 @@ import FinanceOverviewPage from "./pages/finance/FinanceOverviewPage";
 import FinancePayoutsPage from "./pages/finance/FinancePayoutsPage";
 import FinanceExpensesPage from "./pages/finance/FinanceExpensesPage";
 import FinancePaymentsPage from "./pages/finance/FinancePaymentsPage";
+import FinanceIndexRedirect from "./pages/finance/FinanceIndexRedirect";
+import MyOrdersPage from "./pages/finance/MyOrdersPage";
+import MyLedgerPage from "./pages/finance/MyLedgerPage";
 import ClientDetailPage from "./pages/clients/ClientDetailPage";
 import CatalogLayout from "./pages/catalog/CatalogLayout";
 import GroupsPage from "./pages/catalog/GroupsPage";
@@ -55,11 +58,13 @@ export default function App() {
               <Route path="characters" element={<CharactersPage />} />
             </Route>
             <Route path="/finance" element={<FinanceLayout />}>
-              <Route index element={<Navigate to="/finance/overview" replace />} />
+              <Route index element={<FinanceIndexRedirect />} />
               <Route path="overview" element={<FinanceOverviewPage />} />
               <Route path="payouts" element={<FinancePayoutsPage />} />
               <Route path="expenses" element={<FinanceExpensesPage />} />
               <Route path="payments" element={<FinancePaymentsPage />} />
+              <Route path="me-orders" element={<MyOrdersPage />} />
+              <Route path="me-ledger" element={<MyLedgerPage />} />
             </Route>
           </Route>
         </Route>

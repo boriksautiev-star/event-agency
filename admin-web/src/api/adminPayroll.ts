@@ -168,3 +168,82 @@ export async function createPayment(
 export async function removePayment(paymentId: string): Promise<void> {
   await api.delete(`/admin-payroll/payments/${paymentId}`);
 }
+
+export type MeSummaryOrder = {
+  id: string;
+  title: string;
+  eventDate: string;
+  status: string;
+  clientPrice: number;
+  adminPercent: number | null;
+  adminAmount: number | null;
+  willAccrue: boolean;
+};
+
+export type MeSummary = {
+  admin: { id: string; firstName: string; lastName: string };
+  period: { from: string; to: string };
+  compensation:
+    | {
+        type: CompensationType;
+        percentValue: number | null;
+        fixedAmount: number | null;
+      }
+    | null;
+  orders: MeSummaryOrder[];
+  accruedPeriod: number;
+  paidPeriod: number;
+  accruedTotal: number;
+  paidTotal: number;
+  balance: number;
+};
+
+export async function fetchMeSummary(params: {
+  from?: string;
+  to?: string;
+}): Promise<MeSummary> {
+  const q = new URLSearchParams();
+  if (params.from) q.set("from", params.from);
+  if (params.to) q.set("to", params.to);
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  const { data } = await api.get<MeSummary>(
+    `/admin-payroll/me/summary${suffix}`,
+  );
+  return data;
+}
+
+export type LedgerRow = {
+  id: string;
+  kind: "accrual" | "payment";
+  date: string;
+  amount: number;
+  status?: "active" | "cancelled";
+  method?: "cash" | "transfer";
+  comment?: string | null;
+  orderId?: string | null;
+  orderTitle?: string | null;
+  type?: CompensationType;
+  percentValue?: number | null;
+  baseAmount?: number;
+};
+
+export type MeLedger = {
+  items: LedgerRow[];
+  accruedTotal: number;
+  paidTotal: number;
+  balance: number;
+};
+
+export async function fetchMeLedger(params: {
+  from?: string;
+  to?: string;
+}): Promise<MeLedger> {
+  const q = new URLSearchParams();
+  if (params.from) q.set("from", params.from);
+  if (params.to) q.set("to", params.to);
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  const { data } = await api.get<MeLedger>(
+    `/admin-payroll/me/ledger${suffix}`,
+  );
+  return data;
+}
