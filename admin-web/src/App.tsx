@@ -20,6 +20,8 @@ import RatesMatrixPage from "./pages/catalog/RatesMatrixPage";
 import AnimatorsLayout from "./pages/animators/AnimatorsLayout";
 import AnimatorsListPage from "./pages/animators/AnimatorsListPage";
 import SettingsPage from "./pages/SettingsPage";
+import StaffListPage from "./pages/staff/StaffListPage";
+import StaffDetailPage from "./pages/staff/StaffDetailPage";
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/staff" element={<StaffListPage />} />
+            <Route path="/staff/:id" element={<StaffDetailPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:id" element={<ClientDetailPage />} />
             <Route path="/animators" element={<AnimatorsLayout />}>

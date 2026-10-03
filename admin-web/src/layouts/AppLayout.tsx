@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { to: "/animators", label: "Аниматоры", icon: "🎭" },
   { to: "/catalog", label: "Справочники", icon: "📚" },
   { to: "/finance", label: "Финансы", icon: "💰", roles: ["director"] },
+  { to: "/staff", label: "Сотрудники", icon: "💼", roles: ["director"] },
   { to: "/settings", label: "Настройки", icon: "⚙️", roles: ["director"] },
 ];
 
