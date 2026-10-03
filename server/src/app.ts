@@ -15,6 +15,7 @@ import pushRoutes from "./modules/push/push.routes";
 import rateGroupsRoutes from "./modules/rate-groups/rate-groups.routes";
 import charactersRoutes from "./modules/characters/characters.routes";
 import ratesRoutes from "./modules/rates/rates.routes";
+import settingsRoutes from "./modules/settings/settings.routes";
 
 export function createApp() {
   const app = express();
@@ -39,6 +40,7 @@ export function createApp() {
   app.use("/api/rate-groups", rateGroupsRoutes);
   app.use("/api/characters", charactersRoutes);
   app.use("/api/rates", ratesRoutes);
+  app.use("/api/settings", settingsRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

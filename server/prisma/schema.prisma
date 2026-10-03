@@ -61,6 +61,25 @@ model AppSetting {
   @@map("app_settings")
 }
 
+model AgencySettings {
+  id                       Int      @id @default(1)
+  name                     String   @default("Event Agency")
+  legalName                String?  @map("legal_name")
+  inn                      String?
+  phone                    String?
+  email                    String?
+  address                  String?
+  website                  String?
+  timezone                 String   @default("Europe/Moscow")
+  currency                 String   @default("RUB")
+  paymentDetails           String?  @map("payment_details")
+  logoUrl                  String?  @map("logo_url")
+  defaultPrepaymentPercent Int      @default(30) @map("default_prepayment_percent")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  @@map("agency_settings")
+}
+
 model Client {
   id        String   @id @default(uuid())
   name      String
