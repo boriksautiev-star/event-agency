@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import RequireAuth from "./components/RequireAuth";
+import RequireRole from "./components/RequireRole";
 import AppLayout from "./layouts/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import OrdersPage from "./pages/OrdersPage";
@@ -38,9 +39,11 @@ export default function App() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/staff" element={<StaffListPage />} />
-            <Route path="/staff/:id" element={<StaffDetailPage />} />
+            <Route element={<RequireRole roles={["director"]} />}>
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/staff" element={<StaffListPage />} />
+              <Route path="/staff/:id" element={<StaffDetailPage />} />
+            </Route>
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:id" element={<ClientDetailPage />} />
             <Route path="/animators" element={<AnimatorsLayout />}>
@@ -59,12 +62,16 @@ export default function App() {
             </Route>
             <Route path="/finance" element={<FinanceLayout />}>
               <Route index element={<FinanceIndexRedirect />} />
-              <Route path="overview" element={<FinanceOverviewPage />} />
-              <Route path="payouts" element={<FinancePayoutsPage />} />
-              <Route path="expenses" element={<FinanceExpensesPage />} />
-              <Route path="payments" element={<FinancePaymentsPage />} />
-              <Route path="me-orders" element={<MyOrdersPage />} />
-              <Route path="me-ledger" element={<MyLedgerPage />} />
+              <Route element={<RequireRole roles={["director"]} />}>
+                <Route path="overview" element={<FinanceOverviewPage />} />
+                <Route path="payouts" element={<FinancePayoutsPage />} />
+                <Route path="expenses" element={<FinanceExpensesPage />} />
+                <Route path="payments" element={<FinancePaymentsPage />} />
+              </Route>
+              <Route element={<RequireRole roles={["admin"]} />}>
+                <Route path="me-orders" element={<MyOrdersPage />} />
+                <Route path="me-ledger" element={<MyLedgerPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>
