@@ -7,6 +7,7 @@ import {
   useDeleteUser,
 } from "../../hooks/useUsers";
 import { useDebounce } from "../../hooks/useDebounce";
+import { useAuth } from "../../auth/AuthContext";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -36,6 +37,9 @@ const STATUS_VARIANT: Record<UserStatus, "success" | "danger" | "warning"> = {
 };
 
 export default function AnimatorsListPage() {
+  const { user } = useAuth();
+  const isDirector = user?.role === "director";
+
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<UserStatus | "">("");
 
@@ -92,7 +96,9 @@ export default function AnimatorsListPage() {
             <div className="text-sm text-gray-500">
               Всего: <span className="font-semibold text-gray-800">{total}</span>
             </div>
-            <Button onClick={openCreate}>+ Добавить аниматора</Button>
+            {isDirector ? (
+              <Button onClick={openCreate}>+ Добавить аниматора</Button>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -132,7 +138,7 @@ export default function AnimatorsListPage() {
                 <TableHead className="w-[180px]">Телефон</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead className="w-[130px]">Статус</TableHead>
-                <TableHead className="w-[180px]"></TableHead>
+                {isDirector ? <TableHead className="w-[180px]"></TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -152,53 +158,55 @@ export default function AnimatorsListPage() {
                       {STATUS_LABELS[u.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 justify-end">
-                      <Link to={`/animators/rates?animatorId=${u.id}`}>
+                  {isDirector ? (
+                    <TableCell>
+                      <div className="flex items-center gap-1 justify-end">
+                        <Link to={`/animators/rates?animatorId=${u.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!px-2"
+                            title="Ставки"
+                          >
+                            <Coins size={14} />
+                          </Button>
+                        </Link>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="!px-2"
-                          title="Ставки"
+                          title="Изменить"
+                          onClick={() => openEdit(u)}
                         >
-                          <Coins size={14} />
+                          <Pencil size={14} />
                         </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="!px-2"
-                        title="Изменить"
-                        onClick={() => openEdit(u)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="!px-2"
-                        title="Сбросить пароль"
-                        onClick={() =>
-                          setPwReset({
-                            id: u.id,
-                            name: `${u.lastName} ${u.firstName}`,
-                          })
-                        }
-                      >
-                        <KeyRound size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="!px-2 text-red-600 hover:text-red-700"
-                        title="Заблокировать"
-                        onClick={() => handleBlock(u)}
-                        disabled={deleteMut.isPending}
-                      >
-                        <Ban size={14} />
-                      </Button>
-                    </div>
-                  </TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="!px-2"
+                          title="Сбросить пароль"
+                          onClick={() =>
+                            setPwReset({
+                              id: u.id,
+                              name: `${u.lastName} ${u.firstName}`,
+                            })
+                          }
+                        >
+                          <KeyRound size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="!px-2 text-red-600 hover:text-red-700"
+                          title="Заблокировать"
+                          onClick={() => handleBlock(u)}
+                          disabled={deleteMut.isPending}
+                        >
+                          <Ban size={14} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))}
             </TableBody>
@@ -206,18 +214,22 @@ export default function AnimatorsListPage() {
         )}
       </Card>
 
-      <AnimatorModal
-        open={modalOpen}
-        animator={editing}
-        onClose={() => setModalOpen(false)}
-      />
+      {isDirector ? (
+        <>
+          <AnimatorModal
+            open={modalOpen}
+            animator={editing}
+            onClose={() => setModalOpen(false)}
+          />
 
-      <PasswordResetModal
-        open={!!pwReset}
-        userId={pwReset?.id ?? ""}
-        userName={pwReset?.name ?? ""}
-        onClose={() => setPwReset(null)}
-      />
+          <PasswordResetModal
+            open={!!pwReset}
+            userId={pwReset?.id ?? ""}
+            userName={pwReset?.name ?? ""}
+            onClose={() => setPwReset(null)}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
