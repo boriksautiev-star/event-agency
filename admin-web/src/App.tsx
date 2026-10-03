@@ -49,7 +49,16 @@ export default function App() {
             <Route path="/animators" element={<AnimatorsLayout />}>
               <Route index element={<Navigate to="/animators/list" replace />} />
               <Route path="list" element={<AnimatorsListPage />} />
-              <Route path="rates" element={<RatesMatrixPage />} />
+              <Route
+                element={
+                  <RequireRole
+                    roles={["director"]}
+                    redirectTo="/animators/list"
+                  />
+                }
+              >
+                <Route path="rates" element={<RatesMatrixPage />} />
+              </Route>
             </Route>
 
             {/* Редирект старых ссылок */}
