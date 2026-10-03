@@ -19,6 +19,7 @@ import CharactersPage from "./pages/catalog/CharactersPage";
 import RatesMatrixPage from "./pages/catalog/RatesMatrixPage";
 import AnimatorsLayout from "./pages/animators/AnimatorsLayout";
 import AnimatorsListPage from "./pages/animators/AnimatorsListPage";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:id" element={<ClientDetailPage />} />
             <Route path="/animators" element={<AnimatorsLayout />}>

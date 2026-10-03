@@ -1,12 +1,22 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
-const NAV = [
-  { to: "/orders", label: "Заказы", icon: "📅" },
+type Role = "director" | "admin" | "animator";
+
+type NavItem = {
+  to: string;
+  label: string;
+  icon: string;
+  roles?: Role[];
+};
+
+const NAV: NavItem[] = [
+  { to: "/orders", label: "Заказы", icon: "📋" },
   { to: "/clients", label: "Клиенты", icon: "👥" },
   { to: "/animators", label: "Аниматоры", icon: "🎭" },
-  { to: "/catalog", label: "Справочники", icon: "🎭" },
+  { to: "/catalog", label: "Справочники", icon: "📚" },
   { to: "/finance", label: "Финансы", icon: "💰" },
+  { to: "/settings", label: "Настройки", icon: "⚙️", roles: ["director"] },
 ];
 
 export default function AppLayout() {
@@ -18,9 +28,14 @@ export default function AppLayout() {
     navigate("/login", { replace: true });
   };
 
+  const visibleNav = NAV.filter(
+    (item) =>
+      !item.roles ||
+      (user?.role && item.roles.includes(user.role as Role)),
+  );
+
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
       <aside className="w-60 bg-white border-r border-gray-200 flex flex-col">
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="text-lg font-extrabold text-primary">Event Agency</div>
@@ -28,7 +43,7 @@ export default function AppLayout() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV.map((item) => (
+          {visibleNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -60,7 +75,6 @@ export default function AppLayout() {
         </div>
       </aside>
 
-      {/* Content */}
       <main className="flex-1 min-w-0">
         <header className="h-14 bg-white border-b border-gray-200 flex items-center px-6">
           <div className="text-sm text-gray-500">

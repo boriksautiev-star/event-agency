@@ -6,11 +6,25 @@ import { RatesController } from "./rates.controller";
 
 const router = Router();
 
-// lookup нужен и админу (при создании назначения), и директору
-router.get("/lookup", requireAuth, RatesController.lookup);
-router.get("/matrix", requireAuth, RatesController.getMatrix);
+router.get(
+  "/lookup",
+  requireAuth,
+  requirePermission(PERMISSIONS.RATES_READ),
+  RatesController.lookup,
+);
 
-// Изменение матрицы — только директор
-router.put("/matrix", requireAuth, requirePermission(PERMISSIONS.RATES_WRITE), RatesController.saveMatrix);
+router.get(
+  "/matrix",
+  requireAuth,
+  requirePermission(PERMISSIONS.RATES_READ),
+  RatesController.getMatrix,
+);
+
+router.put(
+  "/matrix",
+  requireAuth,
+  requirePermission(PERMISSIONS.RATES_WRITE),
+  RatesController.saveMatrix,
+);
 
 export default router;
