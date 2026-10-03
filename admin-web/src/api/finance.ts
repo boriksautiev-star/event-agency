@@ -94,8 +94,10 @@ export type ExpenseCategory = {
 };
 
 export async function fetchExpenseCategories(): Promise<ExpenseCategory[]> {
-  const { data } = await api.get<ExpenseCategory[]>("/finance/expense-categories");
-  return data;
+  const { data } = await api.get<
+    ExpenseCategory[] | { items: ExpenseCategory[] }
+  >("/finance/expense-categories");
+  return Array.isArray(data) ? data : data.items ?? [];
 }
 
 export type CategoryInput = {
