@@ -34,7 +34,7 @@ export class AdminCompensationService {
   static async list(adminId: string) {
     return prisma.adminCompensation.findMany({
       where: { adminId },
-      orderBy: { effectiveFrom: "desc" },
+      orderBy: [{ effectiveFrom: "desc" }, { createdAt: "desc" }],
     });
   }
 
