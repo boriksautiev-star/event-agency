@@ -45,7 +45,12 @@ export class OrdersController {
     try {
       if (!req.user) throw new AppError("Требуется авторизация", 401);
       const data = UpdateOrderSchema.parse(req.body);
-      const order = await OrdersService.update(req.params.id!, data, req.user.sub);
+      const order = await OrdersService.update(
+        req.params.id!,
+        data,
+        req.user.sub,
+        req.user.role,
+      );
       res.json({ order });
     } catch (e) { next(e); }
   }
@@ -54,7 +59,12 @@ export class OrdersController {
     try {
       if (!req.user) throw new AppError("Требуется авторизация", 401);
       const data = UpdateOrderStatusSchema.parse(req.body);
-      const order = await OrdersService.updateStatus(req.params.id!, data, req.user.sub);
+      const order = await OrdersService.updateStatus(
+        req.params.id!,
+        data,
+        req.user.sub,
+        req.user.role,
+      );
       res.json({ order });
     } catch (e) { next(e); }
   }
@@ -157,8 +167,12 @@ export class OrdersController {
   static async handoverFinalPayment(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) throw new AppError("Требуется авторизация", 401);
-      if (req.user.role !== "director" && req.user.role !== "admin") {
-        throw new AppError("Нет доступа", 403, "FORBIDDEN");
+      if (req.user.role !== "director") {
+        throw new AppError(
+          "Сдать в кассу / сверить может только директор.",
+          403,
+          "FORBIDDEN",
+        );
       }
       const order = await OrdersService.handoverFinalPayment(req.params.id!, req.user.sub);
       res.json({ order });

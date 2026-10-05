@@ -489,7 +489,42 @@ export class OrdersService {
     return order;
   }
 
-  static async update(id: string, data: UpdateOrderInput, changedBy: string) {
+  static async update(
+    id: string,
+    data: UpdateOrderInput,
+    changedBy: string,
+    role: string,
+  ) {
+    if (role === "animator") {
+      throw new AppError(
+        "Аниматор не может редактировать заказ.",
+        403,
+        "FORBIDDEN",
+      );
+    }
+    if (role === "admin") {
+      if (data.prepaymentAmount !== undefined) {
+        throw new AppError(
+          "Только директор может менять сумму предоплаты.",
+          403,
+          "FORBIDDEN",
+        );
+      }
+      if (data.prepaymentPaid !== undefined) {
+        throw new AppError(
+          "Только директор может отмечать предоплату.",
+          403,
+          "FORBIDDEN",
+        );
+      }
+      if (data.finalPaymentMethod !== undefined) {
+        throw new AppError(
+          "Только директор может менять метод финальной оплаты.",
+          403,
+          "FORBIDDEN",
+        );
+      }
+    }
     const existing = await prisma.order.findUnique({ where: { id } });
     if (!existing) throw new AppError("Заказ не найден", 404, "ORDER_NOT_FOUND");
 
@@ -609,10 +644,49 @@ export class OrdersService {
     });
   }
 
-  static async updateStatus(id: string, data: UpdateOrderStatusInput, changedBy: string) {
-    const order = await prisma.order.findUnique({ where: { id } });
+  static async updateStatus(
+    id: string,
+    data: UpdateOrderStatusInput,
+    changedBy: string,
+    role: string,
+  ) {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { animators: true },
+    });
     if (!order) throw new AppError("Заказ не найден", 404, "ORDER_NOT_FOUND");
     if (order.status === data.status) return order;
+
+    // Проверки прав по ролям
+    if (data.status === "completed") {
+      if (role === "admin") {
+        throw new AppError(
+          "Статус «Выполнен» подтверждает аниматор на заказе или директор.",
+          403,
+          "FORBIDDEN",
+        );
+      }
+      if (role === "animator") {
+        const isAssigned = order.animators.some(
+          (a) =>
+            a.animatorId === changedBy &&
+            (a.status === "accepted" || a.status === "completed"),
+        );
+        if (!isAssigned) {
+          throw new AppError(
+            "Только аниматор, назначенный на заказ, может подтвердить его выполнение.",
+            403,
+            "FORBIDDEN",
+          );
+        }
+      }
+    } else if (role === "animator") {
+      throw new AppError(
+        "Аниматор может менять только статус «Выполнен».",
+        403,
+        "FORBIDDEN",
+      );
+    }
 
     return prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
@@ -1189,29 +1263,14 @@ export class OrdersService {
       throw new AppError("Уже отмечено", 409, "ALREADY_HANDED");
     }
 
-    const promoteToCompleted = order.status !== "completed" && order.status !== "cancelled";
-
     return prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id: orderId },
         data: {
           finalPaymentHandedAt: new Date(),
           finalPaymentHandedBy: currentUserId,
-          ...(promoteToCompleted ? { status: "completed" as any } : {}),
         },
       });
-
-      if (promoteToCompleted) {
-        await tx.orderStatusHistory.create({
-          data: {
-            orderId,
-            oldStatus: order.status,
-            newStatus: "completed",
-            changedBy: currentUserId,
-            comment: "Автоматически: финальная оплата сдана/сверена",
-          },
-        });
-      }
 
       await this.logChange(
         tx,
