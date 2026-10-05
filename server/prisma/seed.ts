@@ -8,6 +8,8 @@ import {
   PaymentMethod,
   PayoutSource,
   OrderPaymentType,
+  AdminCompensationType,
+  AdminAccrualStatus,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -20,6 +22,10 @@ async function hashPassword(plain: string): Promise<string> {
 async function main() {
   console.log("🌱 Seed: очищаем данные…");
 
+  await prisma.adminPayment.deleteMany({});
+  await prisma.adminAccrual.deleteMany({});
+  await prisma.adminCompensation.deleteMany({});
+  await prisma.agencySettings.deleteMany({});
   await prisma.orderChange.deleteMany({});
   await prisma.orderStatusHistory.deleteMany({});
   await prisma.orderPayment.deleteMany({});
@@ -93,6 +99,41 @@ async function main() {
   console.log(`   ✓ admin:    ${admin.phone}`);
   console.log(`   ✓ animator: ${anim1.phone}`);
   console.log(`   ✓ animator: ${anim2.phone}`);
+
+  console.log("🌱 Seed: настройки агентства (singleton)…");
+  await prisma.agencySettings.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      name: "Event Agency",
+      legalName: "ИП Иванов И.И.",
+      inn: "770123456789",
+      phone: "+74951234567",
+      email: "hello@event-agency.ru",
+      address: "Москва, ул. Тверская, 1",
+      website: "https://event-agency.ru",
+      timezone: "Europe/Moscow",
+      currency: "RUB",
+      paymentDetails: "Р/с 40802810... Тинькофф Банк",
+      defaultPrepaymentPercent: 30,
+    },
+  });
+  console.log("   ✓ agency_settings");
+
+  console.log("🌱 Seed: оплата админа (Ольга — 7%)…");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  await prisma.adminCompensation.create({
+    data: {
+      adminId: admin.id,
+      type: AdminCompensationType.percent,
+      percentValue: 7,
+      fixedAmount: null,
+      effectiveFrom: today,
+    },
+  });
+  console.log("   ✓ admin_compensation (percent 7%)");
 
   console.log("🌱 Seed: создаём клиентов…");
 
@@ -497,6 +538,17 @@ async function main() {
         createdBy: director.id,
       },
     });
+    await prisma.adminAccrual.create({
+      data: {
+        adminId: admin.id,
+        orderId: order.id,
+        type: AdminCompensationType.percent,
+        baseAmount: 11000,
+        percentValue: 7,
+        amount: 770,
+        status: AdminAccrualStatus.active,
+      },
+    });
   }
 
   // ===== 4. Утренник (-10 дней, completed, 2 слота, 2 аниматора) =====
@@ -597,6 +649,17 @@ async function main() {
         createdBy: director.id,
       },
     });
+    await prisma.adminAccrual.create({
+      data: {
+        adminId: admin.id,
+        orderId: order.id,
+        type: AdminCompensationType.percent,
+        baseAmount: 11500,
+        percentValue: 7,
+        amount: 805,
+        status: AdminAccrualStatus.active,
+      },
+    });
   }
 
   // ===== 5. Отменённый заказ (+5 дней, cancelled) =====
@@ -645,7 +708,29 @@ async function main() {
     },
   });
 
-  console.log("   ✓ 5 демо-заказов + 2 расхода");
+  console.log("🌱 Seed: выплата админу (аванс 500 ₽)…");
+  const salaryExpense = await prisma.expense.create({
+    data: {
+      categoryId: cats.get("Зарплаты")!,
+      amount: 500,
+      expenseDate: day(-1),
+      comment: "Выплата админу Петрова Ольга — аванс",
+      createdBy: director.id,
+    },
+  });
+  await prisma.adminPayment.create({
+    data: {
+      adminId: admin.id,
+      amount: 500,
+      method: PaymentMethod.transfer,
+      paidAt: day(-1),
+      comment: "Аванс за первую половину месяца",
+      expenseId: salaryExpense.id,
+      createdBy: director.id,
+    },
+  });
+
+  console.log("   ✓ 5 демо-заказов + 2 расхода + 1 аванс админу");
 
   console.log("\n✅ Seed завершён.\n");
   console.log("Учётные записи:");
@@ -660,6 +745,12 @@ async function main() {
   console.log("  💍 Свадьба                 −3 дня   (completed, оплачен полностью)");
   console.log("  🎄 Утренник                −10 дней (completed, 2 слота)");
   console.log("  ❌ Отменённый заказ        +5 дней  (cancelled)");
+  console.log("");
+  console.log("Оплата админа (Ольга Петрова):");
+  console.log("  💼 Ставка:              7% от заказов");
+  console.log("  📈 Начислено:           1575 ₽ (Свадьба 770 + Утренник 805)");
+  console.log("  💸 Выплачено (аванс):   500 ₽");
+  console.log("  💵 К выплате:           1075 ₽");
 }
 
 main()
