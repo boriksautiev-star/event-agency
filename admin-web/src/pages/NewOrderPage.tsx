@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -18,6 +18,9 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import { useClients } from "../hooks/useClients";
 import { useCreateOrder } from "../hooks/useOrders";
+import { useAdmins } from "../hooks/useAdminPayroll";
+import { useSettings } from "../hooks/useSettings";
+import { useAuth } from "../auth/AuthContext";
 import { NewClientModal } from "../components/NewClientModal";
 import { useCharacters } from "../hooks/useCharacters";
 import { TRANSPORT_POLICY_LABELS } from "../lib/labels";
@@ -34,6 +37,15 @@ type LocalSlot = {
   sortOrder: number;
 };
 
+function addHour(hhmm: string): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+  if (!m) return hhmm;
+  const total = (Number(m[1]) * 60 + Number(m[2]) + 60) % (24 * 60);
+  const h = Math.floor(total / 60);
+  const min = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
 function todayIso(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -44,20 +56,33 @@ function todayIso(): string {
 
 export default function NewOrderPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: clients = [] } = useClients();
   const { data: characters = [] } = useCharacters({ activeOnly: true });
+  const { data: adminsData } = useAdmins();
+  const { data: settings } = useSettings();
   const createMut = useCreateOrder();
+
+  const admins = useMemo(
+    () => (adminsData?.items ?? []).filter((a) => a.status === "active"),
+    [adminsData],
+  );
 
   const [clientId, setClientId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [eventDate, setEventDate] = useState(todayIso());
   const [startTime, setStartTime] = useState("15:00");
-  const [endTime, setEndTime] = useState("16:00");
+  const [endTime, setEndTime] = useState(addHour("15:00"));
+  const [endTouched, setEndTouched] = useState(false);
   const [address, setAddress] = useState("");
   const [comment, setComment] = useState("");
   const [discountPercent, setDiscountPercent] = useState("0");
   const [transportPolicy, setTransportPolicy] = useState<TransportPolicy>("client_one_way");
+  const [adminId, setAdminId] = useState("");
+  const [prepaymentAmount, setPrepaymentAmount] = useState("0");
+  const [prepaymentTouched, setPrepaymentTouched] = useState(false);
+  const [prepaymentPaid, setPrepaymentPaid] = useState(false);
   const [slots, setSlots] = useState<LocalSlot[]>([]);
   const [slotModal, setSlotModal] = useState<
     | { kind: "add" }
@@ -67,6 +92,18 @@ export default function NewOrderPage() {
   const [err, setErr] = useState<string | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
 
+  // Дефолт админа: если текущий пользователь админ — он сам
+  useEffect(() => {
+    if (adminId) return;
+    if (user?.role === "admin") setAdminId(user.id);
+  }, [user, adminId]);
+
+  // Автоподстановка времени окончания = начало + 1 час, если не тронуто вручную
+  useEffect(() => {
+    if (endTouched) return;
+    setEndTime(addHour(startTime));
+  }, [startTime, endTouched]);
+
   const subtotal = useMemo(
     () => slots.reduce((s, x) => s + x.clientPrice, 0),
     [slots],
@@ -74,6 +111,14 @@ export default function NewOrderPage() {
   const dpNum = Number(discountPercent.replace(",", ".")) || 0;
   const discountAmount = +(subtotal * (dpNum / 100)).toFixed(2);
   const clientPrice = +(subtotal - discountAmount).toFixed(2);
+
+  // Автоподстановка предоплаты от % в настройках, пока пользователь не трогал поле
+  useEffect(() => {
+    if (prepaymentTouched) return;
+    const pct = settings?.defaultPrepaymentPercent ?? 0;
+    const suggested = +(clientPrice * (pct / 100)).toFixed(2);
+    setPrepaymentAmount(suggested > 0 ? String(suggested) : "0");
+  }, [clientPrice, settings?.defaultPrepaymentPercent, prepaymentTouched]);
 
   const addSlot = (slot: Omit<LocalSlot, "key" | "sortOrder">) => {
     setSlots((prev) => [
@@ -88,9 +133,7 @@ export default function NewOrderPage() {
 
   const updateSlotAt = (index: number, slot: Omit<LocalSlot, "key" | "sortOrder">) => {
     setSlots((prev) =>
-      prev.map((s, i) =>
-        i === index ? { ...s, ...slot } : s,
-      ),
+      prev.map((s, i) => (i === index ? { ...s, ...slot } : s)),
     );
   };
 
@@ -108,6 +151,10 @@ export default function NewOrderPage() {
     if (!/^\d{2}:\d{2}$/.test(endTime)) return setErr("Конец — формат HH:MM");
     if (dpNum < 0 || dpNum > 100) return setErr("Скидка 0–100%");
 
+    const prepayNum = Number(prepaymentAmount.replace(",", ".")) || 0;
+    if (prepayNum < 0) return setErr("Предоплата — неотрицательное число");
+    if (prepayNum > clientPrice) return setErr("Предоплата больше суммы заказа");
+
     createMut.mutate(
       {
         clientId,
@@ -120,6 +167,9 @@ export default function NewOrderPage() {
         comment: comment.trim() || null,
         discountPercent: dpNum,
         transportPolicy,
+        prepaymentAmount: prepayNum,
+        prepaymentPaid,
+        adminId: adminId || null,
         slots: slots.map((s, i) => ({
           characterId: s.characterId,
           rateDurationMinutes: s.rateDurationMinutes,
@@ -135,6 +185,8 @@ export default function NewOrderPage() {
       },
     );
   };
+
+  const defaultPercent = settings?.defaultPrepaymentPercent ?? 0;
 
   return (
     <div className="space-y-4 max-w-6xl">
@@ -205,6 +257,25 @@ export default function NewOrderPage() {
                 placeholder="Пиратская вечеринка, 10 детей"
               />
             </div>
+
+            <div>
+              <Label htmlFor="no-admin">Ответственный администратор</Label>
+              <Select
+                id="no-admin"
+                value={adminId}
+                onChange={(e) => setAdminId(e.target.value)}
+              >
+                <option value="">— Не назначен —</option>
+                {admins.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.lastName} {a.firstName} · {a.phone}
+                  </option>
+                ))}
+              </Select>
+              <p className="text-xs text-gray-400 mt-1">
+                От выбранного админа зависит начисление зарплаты по этому заказу.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -224,7 +295,16 @@ export default function NewOrderPage() {
               </div>
               <div>
                 <Label htmlFor="no-end">Конец *</Label>
-                <Input id="no-end" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                <Input
+                  id="no-end"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => {
+                    setEndTime(e.target.value);
+                    setEndTouched(true);
+                  }}
+                />
+                <p className="text-xs text-gray-400 mt-1">По умолчанию +1 час от начала</p>
               </div>
             </div>
             <div>
@@ -334,6 +414,39 @@ export default function NewOrderPage() {
               </div>
             </div>
 
+            <div className="border-t border-gray-100 pt-3 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="no-prepay">Предоплата, ₽</Label>
+                  <Input
+                    id="no-prepay"
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={prepaymentAmount}
+                    onChange={(e) => {
+                      setPrepaymentAmount(e.target.value);
+                      setPrepaymentTouched(true);
+                    }}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    По умолчанию {defaultPercent}% от суммы заказа. Изменение вручную отключает авторасчёт.
+                  </p>
+                </div>
+                <div className="flex items-end">
+                  <label className="flex items-center gap-2 cursor-pointer pb-1">
+                    <input
+                      type="checkbox"
+                      checked={prepaymentPaid}
+                      onChange={(e) => setPrepaymentPaid(e.target.checked)}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <span className="text-sm text-gray-700">Оплачена сразу</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="no-comment">Комментарий</Label>
               <Textarea
@@ -382,7 +495,7 @@ export default function NewOrderPage() {
   );
 }
 
-// ============ Внутренняя модалка (пока без API, локальный стейт) ============
+// ============ Внутренняя модалка слота ============
 type NewOrderSlotModalProps = {
   mode: { kind: "add" } | { kind: "edit"; index: number };
   slots: LocalSlot[];

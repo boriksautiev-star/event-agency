@@ -22,6 +22,15 @@ type Props = {
   onClose: () => void;
 };
 
+function addHour(hhmm: string): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+  if (!m) return hhmm;
+  const total = (Number(m[1]) * 60 + Number(m[2]) + 60) % (24 * 60);
+  const h = Math.floor(total / 60);
+  const min = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
 function isoToDateInput(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -39,6 +48,7 @@ export function OrderEditModal({ order, open, onClose }: Props) {
   const [eventDate, setEventDate] = useState(isoToDateInput(order.eventDate));
   const [startTime, setStartTime] = useState(order.startTime);
   const [endTime, setEndTime] = useState(order.endTime);
+  const [endTouched, setEndTouched] = useState(false);
   const [address, setAddress] = useState(order.address ?? "");
   const [comment, setComment] = useState(order.comment ?? "");
   const [discountPercent, setDiscountPercent] = useState(String(Number(order.discountPercent) || 0));
@@ -53,6 +63,7 @@ export function OrderEditModal({ order, open, onClose }: Props) {
       setEventDate(isoToDateInput(order.eventDate));
       setStartTime(order.startTime);
       setEndTime(order.endTime);
+      setEndTouched(false);
       setAddress(order.address ?? "");
       setComment(order.comment ?? "");
       setDiscountPercent(String(Number(order.discountPercent) || 0));
@@ -60,6 +71,12 @@ export function OrderEditModal({ order, open, onClose }: Props) {
       setError(null);
     }
   }, [open, order]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (endTouched) return;
+    setEndTime(addHour(startTime));
+  }, [startTime, endTouched, open]);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -148,8 +165,12 @@ export function OrderEditModal({ order, open, onClose }: Props) {
                 id="edit-end"
                 type="time"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => {
+                  setEndTime(e.target.value);
+                  setEndTouched(true);
+                }}
               />
+              <p className="text-xs text-gray-400 mt-1">По умолчанию +1 час от начала</p>
             </div>
           </div>
 

@@ -155,6 +155,10 @@ export type CreateOrderPayload = {
   comment?: string | null;
   discountPercent: number;
   transportPolicy: "agency_pays" | "client_one_way" | "client_both_ways";
+  prepaymentAmount?: number;
+  prepaymentPaid?: boolean;
+  finalPaymentMethod?: "cash" | "transfer" | null;
+  adminId?: string | null;
   slots: SlotInput[];
 };
 
