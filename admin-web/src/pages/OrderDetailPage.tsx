@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import type { OrderStatus, OrderSlot } from "../api/types";
 import {
   ASSIGNMENT_STATUS_LABELS,
@@ -34,6 +35,8 @@ import { formatDate, formatDateTime, formatMoney, formatTimeRange } from "../lib
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isDirector = user?.role === "director";
   const { data: order, isLoading, isError, error } = useOrder(id);
   const statusMutation = useUpdateOrderStatus(id);
   const finance = useOrderFinance(id);
@@ -147,7 +150,7 @@ export default function OrderDetailPage() {
             <span className="text-xs text-gray-500 uppercase tracking-wide mr-1">
               Перевести в:
             </span>
-            {transitions.map((t) => {
+            {(isDirector ? transitions : transitions.filter((t) => t !== "completed")).map((t) => {
               const cfg = STATUS_BUTTON[t];
               return (
                 <Button
@@ -252,8 +255,8 @@ export default function OrderDetailPage() {
 
           <div className="border-t border-gray-100 my-2" />
 
-          {/* Управление предоплатой */}
-          {Number(order.prepaymentAmount) > 0 ? (
+          {/* Управление предоплатой (только директор) */}
+          {isDirector && Number(order.prepaymentAmount) > 0 ? (
             <div className="flex items-center gap-2 flex-wrap pt-1">
               {!order.prepaymentPaidAt ? (
                 <Button
@@ -287,8 +290,8 @@ export default function OrderDetailPage() {
             </div>
           ) : null}
 
-          {/* Управление финалом */}
-          {Number(order.finalPaymentAmount) > 0 ? (
+          {/* Управление финалом (только директор) */}
+          {isDirector && Number(order.finalPaymentAmount) > 0 ? (
             <div className="flex items-center gap-2 flex-wrap pt-1">
               {!order.finalPaymentReceivedAt ? (
                 <>
@@ -387,7 +390,11 @@ export default function OrderDetailPage() {
                   <TableHead className="w-[80px] whitespace-nowrap">Длит.</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Цена</TableHead>
                   <TableHead>Аниматор</TableHead>
-                  <TableHead className="w-[100px] text-right whitespace-nowrap">Выплата</TableHead>
+                  {isDirector ? (
+                    <TableHead className="w-[100px] text-right whitespace-nowrap">
+                      Выплата
+                    </TableHead>
+                  ) : null}
                   <TableHead className="w-[110px]">Статус</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
@@ -417,22 +424,24 @@ export default function OrderDetailPage() {
                                 {assignment.animator.phone}
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="!px-2"
-                              onClick={() =>
-                                setAssignmentEdit({
-                                  animatorId: assignment.animatorId,
-                                  animatorName: `${assignment.animator.firstName} ${assignment.animator.lastName}`,
-                                  payout: Number(assignment.payout),
-                                  payoutSource: assignment.payoutSource,
-                                })
-                              }
-                              title="Изменить выплату"
-                            >
-                              ✎
-                            </Button>
+                            {isDirector ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="!px-2"
+                                onClick={() =>
+                                  setAssignmentEdit({
+                                    animatorId: assignment.animatorId,
+                                    animatorName: `${assignment.animator.firstName} ${assignment.animator.lastName}`,
+                                    payout: Number(assignment.payout),
+                                    payoutSource: assignment.payoutSource,
+                                  })
+                                }
+                                title="Изменить выплату"
+                              >
+                                ✎
+                              </Button>
+                            ) : null}
                           </div>
                         ) : (
                           <Button
@@ -444,9 +453,11 @@ export default function OrderDetailPage() {
                           </Button>
                         )}
                       </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        {assignment ? formatMoney(assignment.payout) : "—"}
-                      </TableCell>
+                      {isDirector ? (
+                        <TableCell className="text-right whitespace-nowrap">
+                          {assignment ? formatMoney(assignment.payout) : "—"}
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         {assignment ? (
                           <Badge variant={ASSIGNMENT_BADGE[assignment.status] ?? "default"}>
@@ -497,27 +508,29 @@ export default function OrderDetailPage() {
             label="Политика"
             value={TRANSPORT_POLICY_LABELS[order.transportPolicy] ?? order.transportPolicy}
           />
-          {activeAnimators.length > 0 ? (
-            <>
-              <div className="border-t border-gray-100 my-2" />
-              {activeAnimators.map((a: any) => (
-                <Row
-                  key={a.id}
-                  label={`${a.animator.firstName} ${a.animator.lastName}`}
-                  value={Number(a.transportCost) > 0 ? formatMoney(a.transportCost) : "—"}
-                />
-              ))}
-              {transportTotal > 0 ? (
-                <Row
-                  label="Итого на транспорте (агентство)"
-                  value={formatMoney(transportTotal)}
-                  valueClass="text-gray-900 font-bold"
-                />
-              ) : null}
-            </>
-          ) : (
-            <div className="text-sm text-gray-500">Нет назначенных аниматоров</div>
-          )}
+          {isDirector ? (
+            activeAnimators.length > 0 ? (
+              <>
+                <div className="border-t border-gray-100 my-2" />
+                {activeAnimators.map((a: any) => (
+                  <Row
+                    key={a.id}
+                    label={`${a.animator.firstName} ${a.animator.lastName}`}
+                    value={Number(a.transportCost) > 0 ? formatMoney(a.transportCost) : "—"}
+                  />
+                ))}
+                {transportTotal > 0 ? (
+                  <Row
+                    label="Итого на транспорте (агентство)"
+                    value={formatMoney(transportTotal)}
+                    valueClass="text-gray-900 font-bold"
+                  />
+                ) : null}
+              </>
+            ) : (
+              <div className="text-sm text-gray-500">Нет назначенных аниматоров</div>
+            )
+          ) : null}
         </CardContent>
       </Card>
       {/* История изменений */}
