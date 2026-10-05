@@ -40,6 +40,22 @@ export type OrderAnimator = {
   animator: { id: string; firstName: string; lastName: string; phone: string };
 };
 
+export type OrderChange = {
+  id: string;
+  orderId: string;
+  changedBy: string;
+  changedAt: string;
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+  summary: string | null;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+};
 export type Order = {
   id: string;
   clientId: string;
@@ -71,6 +87,8 @@ export type Order = {
   animators?: OrderAnimator[];
   acceptedAt?: string | null;
   acceptedBy?: string | null;
+  adminId?: string | null;
+  changes?: OrderChange[];
 };
 
 export type ListResponse<T> = {

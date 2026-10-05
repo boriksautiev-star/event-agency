@@ -39,6 +39,7 @@ export default function OrderDetailPage() {
   const finance = useOrderFinance(id);
   const deleteSlotMut = useDeleteSlot(id);
   const [editOpen, setEditOpen] = useState(false);
+  const [showAllChanges, setShowAllChanges] = useState(false);
   const [slotModal, setSlotModal] = useState<
     | { kind: "add" }
     | { kind: "edit"; slot: OrderSlot }
@@ -519,6 +520,42 @@ export default function OrderDetailPage() {
           )}
         </CardContent>
       </Card>
+      {/* История изменений */}
+      <Card>
+        <CardHeader>
+          <CardTitle>История изменений</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(order.changes ?? []).length === 0 ? (
+            <div className="text-sm text-gray-500">Изменений пока не было</div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {(showAllChanges
+                  ? (order.changes ?? [])
+                  : (order.changes ?? []).slice(0, 20)
+                ).map((c: any) => (
+                  <ChangeRow key={c.id} change={c} />
+                ))}
+              </div>
+              {(order.changes ?? []).length > 20 ? (
+                <div className="pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllChanges((v) => !v)}
+                    className="text-xs text-primary hover:underline font-semibold"
+                  >
+                    {showAllChanges
+                      ? "Свернуть"
+                      : `Показать все (${(order.changes ?? []).length})`}
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       <AnimatorPickerModal
         orderId={order.id}
         date={eventDateYmd}
@@ -582,6 +619,129 @@ function Row({
     <div className="flex items-center justify-between gap-4">
       <span className="text-sm text-gray-600">{label}</span>
       <span className={`text-sm font-medium ${valueClass ?? "text-gray-900"}`}>{value}</span>
+    </div>
+  );
+}
+
+// ============ История изменений ============
+
+const FIELD_LABELS: Record<string, string> = {
+  title: "Название",
+  description: "Описание",
+  eventDate: "Дата события",
+  startTime: "Начало",
+  endTime: "Конец",
+  address: "Адрес",
+  lat: "Широта",
+  lng: "Долгота",
+  comment: "Комментарий",
+  adminId: "Ответственный админ",
+  transportPolicy: "Политика транспорта",
+  prepaymentAmount: "Предоплата",
+  prepaymentPaid: "Предоплата оплачена",
+  discountPercent: "Скидка",
+  status: "Статус",
+  created: "Создание заказа",
+  slot_added: "Слот добавлен",
+  animator_added: "Аниматор назначен",
+  animator_removed: "Аниматор снят",
+  finalPaymentReceived: "Финальная оплата",
+  finalPaymentHanded: "Сдача в кассу / сверка",
+};
+
+function labelForChange(field: string): string {
+  return FIELD_LABELS[field] ?? field;
+}
+
+function renderValue(field: string, raw: string | null): string {
+  if (raw === null || raw === "") return "—";
+
+  if (field === "status") {
+    return ORDER_STATUS_LABELS[raw as keyof typeof ORDER_STATUS_LABELS] ?? raw;
+  }
+  if (field === "transportPolicy") {
+    return TRANSPORT_POLICY_LABELS[raw as keyof typeof TRANSPORT_POLICY_LABELS] ?? raw;
+  }
+  if (field === "prepaymentPaid") {
+    return raw === "true" || raw === "Да" ? "Да" : "Нет";
+  }
+  if (field === "discountPercent") {
+    return `${raw}%`;
+  }
+  if (field === "eventDate") {
+    // в БД может быть полный ISO или yyyy-mm-dd
+    try {
+      return formatDate(raw);
+    } catch {
+      return raw;
+    }
+  }
+  if (field === "finalPaymentReceived") {
+    // oldValue обычно null, newValue — текст вида 'Перевод · 6000 ₽'
+    return raw;
+  }
+  if (field === "finalPaymentHanded") {
+    return raw;
+  }
+  return raw;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  director: "Директор",
+  admin: "Администратор",
+  animator: "Аниматор",
+};
+
+function ChangeRow({ change }: { change: any }) {
+  const who = change.user
+    ? `${change.user.lastName ?? ""} ${change.user.firstName ?? ""}`.trim()
+    : "—";
+  const role = change.user?.role
+    ? ROLE_LABELS[change.user.role] ?? change.user.role
+    : null;
+  const label = labelForChange(change.field);
+
+  const oldStr = renderValue(change.field, change.oldValue);
+  const newStr = renderValue(change.field, change.newValue);
+
+  // Для событий-маркеров (created, slot_added, animator_added/removed,
+  // finalPaymentReceived/Handed) oldValue = null — показываем только summary
+  const isEvent = change.oldValue === null && change.newValue === null;
+  const isOneWay = change.oldValue === null && change.newValue !== null;
+
+  return (
+    <div className="flex items-start gap-3 text-sm border-b border-gray-50 pb-2 last:border-b-0">
+      <div className="text-xs text-gray-400 whitespace-nowrap pt-0.5 w-[110px]">
+        {formatDateTime(change.changedAt)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-gray-800">
+          <span className="font-semibold">{who}</span>
+          {role ? (
+            <span className="text-xs text-gray-400 ml-1">({role})</span>
+          ) : null}
+          <span className="text-gray-500"> · {label}</span>
+        </div>
+        {isEvent && change.summary ? (
+          <div className="text-xs text-gray-500 mt-0.5">{change.summary}</div>
+        ) : isOneWay ? (
+          <div className="text-xs mt-0.5">
+            <span className="text-emerald-700">{newStr}</span>
+            {change.summary ? (
+              <span className="text-gray-400 ml-2">· {change.summary}</span>
+            ) : null}
+          </div>
+        ) : (
+          <div className="text-xs mt-0.5">
+            <span className="text-gray-400 line-through">{oldStr}</span>
+            <span className="text-gray-400 mx-1">→</span>
+            <span className="text-gray-800">{newStr}</span>
+            {change.summary ? (
+              <span className="text-gray-400 ml-2">· {change.summary}</span>
+            ) : null}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
