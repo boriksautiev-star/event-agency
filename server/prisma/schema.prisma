@@ -39,6 +39,8 @@ model User {
   adminCompensations AdminCompensation[] @relation("AdminCompensations")
   adminAccruals      AdminAccrual[]      @relation("AdminAccruals")
   adminPayments      AdminPayment[]      @relation("AdminPayments")
+  handoversFrom      HandoverRequest[]   @relation("HandoverFrom")
+  handoversTo        HandoverRequest[]   @relation("HandoverTo")
 
   @@map("users")
 }
@@ -262,6 +264,7 @@ model Order {
   payments      OrderPayment[]
   expenses      Expense[]
   adminAccruals AdminAccrual[]
+  handovers     HandoverRequest[]
 
   @@index([eventDate])
   @@index([status])
@@ -281,9 +284,10 @@ model OrderSlot {
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
-  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  character   Character       @relation(fields: [characterId], references: [id], onDelete: Restrict)
+  order       Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  character   Character         @relation(fields: [characterId], references: [id], onDelete: Restrict)
   assignments OrderAnimator[]
+  handovers   HandoverRequest[]
 
   @@index([orderId])
   @@index([characterId])
@@ -472,4 +476,39 @@ model AdminPayment {
 
   @@index([adminId, paidAt])
   @@map("admin_payments")
+}
+
+enum HandoverRequestStatus {
+  pending_receiver
+  pending_approval
+  approved
+  rejected_by_receiver
+  rejected_by_admin
+  cancelled
+}
+
+model HandoverRequest {
+  id             String                @id @default(uuid())
+  orderId        String                @map("order_id")
+  slotId         String                @map("slot_id")
+  fromAnimatorId String                @map("from_animator_id")
+  toAnimatorId   String                @map("to_animator_id")
+  comment        String?
+  status         HandoverRequestStatus @default(pending_receiver)
+  requestedAt    DateTime              @default(now()) @map("requested_at")
+  acceptedAt     DateTime?             @map("accepted_at")
+  resolvedAt     DateTime?             @map("resolved_at")
+  resolvedBy     String?               @map("resolved_by")
+  rejectComment  String?               @map("reject_comment")
+
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  slot         OrderSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  fromAnimator User      @relation("HandoverFrom", fields: [fromAnimatorId], references: [id], onDelete: Cascade)
+  toAnimator   User      @relation("HandoverTo", fields: [toAnimatorId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([orderId])
+  @@index([fromAnimatorId, status])
+  @@index([toAnimatorId, status])
+  @@map("handover_requests")
 }

@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const availability = useAvailability(today);
 
   const noAnimators = useOrders({
-    hasAnimators: "false",
+    hasUnassignedSlots: "true",
     dateFrom: today,
     dateTo: weekAhead,
     limit: 50,
@@ -83,8 +83,13 @@ export default function DashboardPage() {
     limit: 5,
   });
 
-  const monthSummary = useFinanceSummary({ from: monthFrom, to: monthTo });
-  const prevMonthSummary = useFinanceSummary({ from: prevMonthFrom, to: prevMonthTo });
+  // Финансы — только директору (у админа нет FINANCE_READ → не делаем запрос)
+  const monthSummary = useFinanceSummary(
+    isDirector ? { from: monthFrom, to: monthTo } : undefined,
+  );
+  const prevMonthSummary = useFinanceSummary(
+    isDirector ? { from: prevMonthFrom, to: prevMonthTo } : undefined,
+  );
 
   const freeAnimators = useMemo(() => {
     const items = availability.data ?? [];
@@ -245,7 +250,7 @@ export default function DashboardPage() {
                         {formatDate(o.eventDate)}
                       </div>
                     </div>
-                    <Badge variant="alert">Без аниматора</Badge>
+                    <Badge variant="alert">Нужен аниматор</Badge>
                   </Link>
                 ))}
               </div>

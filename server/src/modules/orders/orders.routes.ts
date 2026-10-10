@@ -3,6 +3,7 @@ import { requireAuth } from "../../middlewares/requireAuth";
 import { requirePermission } from "../../middlewares/requirePermission";
 import { PERMISSIONS } from "@event-agency/shared";
 import { OrdersController } from "./orders.controller";
+import { HandoverController } from "../handover/handover.controller";
 
 const router = Router();
 
@@ -21,6 +22,18 @@ router.delete("/:id/slots/:slotId", requireAuth, requirePermission(PERMISSIONS.O
 router.post("/:id/animators", requireAuth, requirePermission(PERMISSIONS.ORDERS_ASSIGN), OrdersController.assignAnimator);
 router.patch("/:id/animators/:animatorId", requireAuth, OrdersController.updateAssignment);
 router.patch("/:id/animators/:animatorId/transport", requireAuth, OrdersController.updateTransport);
+
+// ===== Передача заказа (handover) на конкретном слоте =====
+router.get(
+  "/:id/slots/:slotId/handover-candidates",
+  requireAuth,
+  HandoverController.candidates,
+);
+router.post(
+  "/:id/slots/:slotId/handover",
+  requireAuth,
+  HandoverController.create,
+);
 router.delete("/:id/animators/:animatorId", requireAuth, requirePermission(PERMISSIONS.ORDERS_ASSIGN), OrdersController.removeAssignment);
 
 // Финальная оплата

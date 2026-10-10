@@ -86,6 +86,7 @@ export const ListOrdersQuerySchema = z.object({
   priceTo: z.coerce.number().min(0).optional(),
 
   hasAnimators: z.enum(["true", "false"]).optional(),
+  hasUnassignedSlots: z.enum(["true", "false"]).optional(),
   prepaymentPaid: z.enum(["true", "false"]).optional(),
 
   limit: z.coerce.number().min(1).max(200).default(50),

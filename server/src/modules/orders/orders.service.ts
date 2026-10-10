@@ -172,6 +172,45 @@ export class OrdersService {
       where.animators = { none: {} };
     }
 
+    // Слот без активного аниматора (invited/accepted/completed) — требует назначения
+    if (query.hasUnassignedSlots === "true") {
+      const activeStatuses: AssignmentStatus[] = [
+        "invited" as AssignmentStatus,
+        "accepted" as AssignmentStatus,
+        "completed" as AssignmentStatus,
+      ];
+      where.AND = [
+        ...(where.AND ?? []),
+        {
+          slots: {
+            some: {
+              assignments: {
+                none: { status: { in: activeStatuses } },
+              },
+            },
+          },
+        },
+      ];
+    } else if (query.hasUnassignedSlots === "false") {
+      const activeStatuses: AssignmentStatus[] = [
+        "invited" as AssignmentStatus,
+        "accepted" as AssignmentStatus,
+        "completed" as AssignmentStatus,
+      ];
+      where.AND = [
+        ...(where.AND ?? []),
+        {
+          slots: {
+            every: {
+              assignments: {
+                some: { status: { in: activeStatuses } },
+              },
+            },
+          },
+        },
+      ];
+    }
+
     if (query.rateGroupId || query.characterId) {
       const slotFilter: any = {};
       if (query.characterId) slotFilter.characterId = query.characterId;
