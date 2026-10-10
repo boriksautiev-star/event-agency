@@ -62,8 +62,10 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
 export function useNotifications() {
   const { user } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const notificationListener = useRef<Notifications.EventSubscription>();
-  const responseListener = useRef<Notifications.EventSubscription>();
+  const notificationListener =
+    useRef<Notifications.EventSubscription | null>(null);
+  const responseListener =
+    useRef<Notifications.EventSubscription | null>(null);
 
   // Регистрация токена и отправка на сервер
   useEffect(() => {

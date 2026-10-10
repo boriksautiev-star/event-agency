@@ -8,10 +8,10 @@ export function navigateToOrder(orderId: string, attempt = 0) {
   if (!orderId) return;
   if (navigationRef.isReady()) {
     try {
-      navigationRef.navigate("OrdersTab" as never, {
+      (navigationRef as any).navigate("OrdersTab", {
         screen: "OrderDetail",
         params: { orderId },
-      } as never);
+      });
     } catch (e) {
       console.warn("[nav] navigateToOrder failed:", e);
     }

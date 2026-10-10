@@ -69,7 +69,7 @@ export function TimePickerField({ value, onChange, label = "Время" }: Props
             mode="time"
             display="spinner"
             is24Hour
-            onValueChange={(date: Date) => onChange(formatTime(date))}
+            onValueChange={(_: any, date: Date) => onChange(formatTime(date))}
           />
           <TouchableOpacity style={styles.doneBtn} onPress={() => setShowIos(false)}>
             <Text style={styles.doneText}>Готово</Text>

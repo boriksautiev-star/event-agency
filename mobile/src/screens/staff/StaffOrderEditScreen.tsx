@@ -14,7 +14,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../api/client";
-import type { Order, TransportPolicy } from "../../api/types";
+import type { AssignmentStatus, Order, TransportPolicy } from "../../api/types";
 import { colors } from "../../theme/colors";
 import {
   ASSIGNMENT_STATUS_COLORS,
@@ -363,11 +363,11 @@ export function StaffOrderEditScreen() {
                       <View
                         style={[
                           styles.badge,
-                          { backgroundColor: ASSIGNMENT_STATUS_COLORS[assignment.status] ?? colors.textMuted },
+                          { backgroundColor: ASSIGNMENT_STATUS_COLORS[assignment.status as AssignmentStatus] ?? colors.textMuted },
                         ]}
                       >
                         <Text style={styles.badgeText}>
-                          {ASSIGNMENT_STATUS_LABELS[assignment.status] ?? assignment.status}
+                          {ASSIGNMENT_STATUS_LABELS[assignment.status as AssignmentStatus] ?? assignment.status}
                         </Text>
                       </View>
                       <TouchableOpacity

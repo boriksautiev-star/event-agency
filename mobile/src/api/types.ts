@@ -43,7 +43,7 @@ export type OrderSlot = {
   isCustomPrice: boolean;
   characterNameSnapshot: string;
   sortOrder: number;
-  character?: { id: string; name: string; rateGroupId: string };
+  character?: { id: string; name: string; rateGroupId: string; rateGroup?: { id: string; name: string } };
 };
 
 export type Order = {
@@ -84,6 +84,7 @@ export type Order = {
     payoutMethod: PaymentMethod | null;
     status: AssignmentStatus;
     transportCost: string | number;
+  transportLockedAt?: string | null;
     transportPaidBy: TransportPolicy;
     transportClientAmount: string | number;
     payoutSource: PayoutSource;

@@ -74,7 +74,7 @@ export function DatePickerField({ value, onChange, label = "Дата" }: Props) 
             value={parseDate(value)}
             mode="date"
             display="spinner"
-            onValueChange={(date: Date) => onChange(formatISO(date))}
+            onValueChange={(_: any, date: Date) => onChange(formatISO(date))}
           />
           <TouchableOpacity style={styles.doneBtn} onPress={() => setShowIos(false)}>
             <Text style={styles.doneText}>Готово</Text>
