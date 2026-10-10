@@ -259,6 +259,18 @@ export function StaffAnimatorFormScreen() {
               <Text style={styles.secondaryBtnText}>💰 Ставки аниматора</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={[styles.secondaryBtn, { marginTop: 10 }]}
+              onPress={() =>
+                navigation.navigate("AnimatorReport", {
+                  animatorId: animatorId!,
+                  animatorName: `${firstName} ${lastName}`.trim(),
+                })
+              }
+            >
+              <Text style={styles.secondaryBtnText}>📊 Отчёт по аниматору</Text>
+            </TouchableOpacity>
+
             {status !== "blocked" ? (
               <TouchableOpacity
                 style={[styles.secondaryBtn, { borderColor: colors.danger, marginTop: 10 }]}
