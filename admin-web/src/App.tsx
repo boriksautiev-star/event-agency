@@ -21,6 +21,7 @@ import CatalogLayout from "./pages/catalog/CatalogLayout";
 import GroupsPage from "./pages/catalog/GroupsPage";
 import CharactersPage from "./pages/catalog/CharactersPage";
 import RatesMatrixPage from "./pages/catalog/RatesMatrixPage";
+import AnimatorReportPage from "./pages/animators/AnimatorReportPage";
 import AnimatorsLayout from "./pages/animators/AnimatorsLayout";
 import AnimatorsListPage from "./pages/animators/AnimatorsListPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -58,6 +59,7 @@ export default function App() {
                 }
               >
                 <Route path="rates" element={<RatesMatrixPage />} />
+                <Route path=":id/report" element={<AnimatorReportPage />} />
               </Route>
             </Route>
 

@@ -81,7 +81,8 @@ export class AnimatorReportService {
     for (const r of releases) {
       const key = r.releaseReason ?? "declined";
       byReason[key] = (byReason[key] ?? 0) + 1;
-      lostPayout += r.payout;
+      // В упущенный заработок входит только отказ аниматора
+      if (r.status === "declined") lostPayout += r.payout;
     }
 
     if (query.status) {
@@ -165,7 +166,10 @@ export class AnimatorReportService {
     const acceptedCount = summary.ordersCount;
     const declinedCount = releases.filter((r) => r.status === "declined").length;
     const removedCount = releases.filter((r) => r.status === "removed").length;
-    const offersCount = acceptedCount + declinedCount + removedCount;
+    // Отказ = declined или handed_over (аниматор сам отказался).
+    // removed_* и order_cancelled не считаем отказом —
+    // это решение директора/админа или отмена клиентом.
+    const offersCount = acceptedCount + declinedCount;
     const acceptRate =
       offersCount > 0 ? +((acceptedCount / offersCount) * 100).toFixed(1) : 0;
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAdmins,
+  fetchAnimatorReport,
   fetchAdmin,
   setCompensation,
   fetchAccruals,
@@ -116,6 +117,18 @@ export function useMeLedger(params: { from?: string; to?: string }) {
   return useQuery({
     queryKey: ["admin-payroll", "me-ledger", params],
     queryFn: () => fetchMeLedger(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useAnimatorReport(
+  id: string | undefined,
+  params: { from: string; to: string; scope?: "all" | "past" | "future" },
+) {
+  return useQuery({
+    queryKey: ["animator-report", id, params],
+    queryFn: () => fetchAnimatorReport(id!, params),
+    enabled: !!id,
     staleTime: 30_000,
   });
 }

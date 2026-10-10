@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Coins, Pencil, KeyRound, Ban } from "lucide-react";
+import { Coins, Pencil, KeyRound, Ban, BarChart3 } from "lucide-react";
 import type { UserLite, UserStatus } from "../../api/users";
 import {
   useUsers,
@@ -138,7 +138,7 @@ export default function AnimatorsListPage() {
                 <TableHead className="w-[180px]">Телефон</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead className="w-[130px]">Статус</TableHead>
-                {isDirector ? <TableHead className="w-[180px]"></TableHead> : null}
+                {isDirector ? <TableHead className="w-[210px]"></TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -161,6 +161,16 @@ export default function AnimatorsListPage() {
                   {isDirector ? (
                     <TableCell>
                       <div className="flex items-center gap-1 justify-end">
+                        <Link to={`/animators/${u.id}/report`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!px-2"
+                            title="Отчёт"
+                          >
+                            <BarChart3 size={14} />
+                          </Button>
+                        </Link>
                         <Link to={`/animators/rates?animatorId=${u.id}`}>
                           <Button
                             variant="ghost"
