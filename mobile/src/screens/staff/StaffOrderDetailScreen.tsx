@@ -22,6 +22,7 @@ import {
   ORDER_STATUS_COLORS,
   ORDER_STATUS_LABELS,
   TRANSPORT_POLICY_LABELS,
+  translateChangeValue,
 } from "../../utils/labels";
 import type { StaffOrdersStackParamList } from "./StaffOrdersStack";
 import { AnimatorPickerModal, PickedAnimator } from "./AnimatorPickerModal";
@@ -496,8 +497,14 @@ export function StaffOrderDetailScreen() {
                 <Text style={styles.changeField}>
                   {CHANGE_FIELD_LABELS[c.field] ?? c.field}:{" "}
                 </Text>
-                {c.oldValue ? <Text style={styles.changeOld}>{c.oldValue} → </Text> : null}
-                <Text style={styles.changeNew}>{c.newValue ?? "—"}</Text>
+                {c.oldValue != null ? (
+                  <Text style={styles.changeOld}>
+                    {translateChangeValue(c.field, c.oldValue)} → 
+                  </Text>
+                ) : null}
+                <Text style={styles.changeNew}>
+                  {translateChangeValue(c.field, c.newValue)}
+                </Text>
               </Text>
               {c.summary ? (
                 <Text style={styles.changeSummary}>{c.summary}</Text>

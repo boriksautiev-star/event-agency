@@ -656,11 +656,65 @@ const FIELD_LABELS: Record<string, string> = {
   status: "Статус",
   created: "Создание заказа",
   slot_added: "Слот добавлен",
+  slot_edited: "Слот изменён",
+  slot_removed: "Слот удалён",
   animator_added: "Аниматор назначен",
   animator_removed: "Аниматор снят",
+  animator_invited: "Аниматор приглашён",
   finalPaymentReceived: "Финальная оплата",
   finalPaymentHanded: "Сдача в кассу / сверка",
+  handover_approved: "Передача заказа подтверждена",
+  handover_rejected: "Передача заказа отклонена",
+  handover_cancelled: "Передача заказа отозвана",
+  payout: "Выплата аниматору",
+  payoutPaid: "Выплата аниматору",
+  payoutUnpaid: "Отмена выплаты аниматору",
+  payoutSource: "Источник выплаты",
+  payoutMethod: "Способ выплаты",
+  transportCost: "Транспорт",
+  transportPaidBy: "Кто оплачивает транспорт",
+  transportClientAmount: "Транспорт от клиента",
+  transportLockedAt: "Транспорт зафиксирован",
+  assignmentStatus: "Статус назначения",
+  releaseReason: "Причина расставания",
+  releaseComment: "Комментарий к расставанию",
+  releasedAt: "Дата расставания",
 };
+
+const ENUM_VALUE_LABELS: Record<string, string> = {
+  // Assignment statuses
+  invited: "Приглашён",
+  accepted: "Принят",
+  declined: "Отклонён",
+  completed: "Выполнен",
+  removed: "Снят",
+  // Release reasons
+  handed_over: "Передан другому",
+  removed_rotation: "Снят (ротация)",
+  removed_quality: "Снят (качество)",
+  order_cancelled: "Заказ отменён",
+  // Payout source
+  rate_matrix: "По матрице ставок",
+  manual: "Вручную",
+  // Payment methods
+  cash: "Наличные",
+  transfer: "Перевод",
+  // Handover statuses
+  pending_receiver: "Ждёт ответа получателя",
+  pending_approval: "Ждёт подтверждения руководителя",
+  approved: "Подтверждена",
+  rejected_by_receiver: "Отклонена получателем",
+  rejected_by_admin: "Отклонена руководителем",
+  cancelled: "Отозвана",
+  // Transport policies
+  agency_pays: "Оплачивает агентство",
+  client_one_way: "Клиент в одну сторону",
+  client_both_ways: "Клиент в обе стороны",
+};
+
+function translateEnum(raw: string): string {
+  return ENUM_VALUE_LABELS[raw] ?? raw;
+}
 
 function labelForChange(field: string): string {
   return FIELD_LABELS[field] ?? field;
@@ -689,14 +743,23 @@ function renderValue(field: string, raw: string | null): string {
       return raw;
     }
   }
+  if (
+    field === "releaseReason" ||
+    field === "payoutSource" ||
+    field === "payoutMethod" ||
+    field === "assignmentStatus" ||
+    field === "transportPaidBy"
+  ) {
+    return translateEnum(raw);
+  }
   if (field === "finalPaymentReceived") {
-    // oldValue обычно null, newValue — текст вида 'Перевод · 6000 ₽'
     return raw;
   }
   if (field === "finalPaymentHanded") {
     return raw;
   }
-  return raw;
+  // fallback: если значение — известный enum, переводим; иначе как есть
+  return ENUM_VALUE_LABELS[raw] ?? raw;
 }
 
 const ROLE_LABELS: Record<string, string> = {

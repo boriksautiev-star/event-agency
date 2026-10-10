@@ -49,6 +49,10 @@ export const TRANSPORT_POLICY_LABELS: Record<TransportPolicy, string> = {
 export const CHANGE_FIELD_LABELS: Record<string, string> = {
   // Логирование выплат
   payoutPaid: "Выплата",
+  payoutUnpaid: "Отмена выплаты",
+  payout: "Выплата аниматору",
+  payoutSource: "Источник выплаты",
+  payoutMethod: "Способ выплаты",
   created: "Заказ создан",
   status: "Статус",
   services: "Состав услуг",
@@ -64,6 +68,78 @@ export const CHANGE_FIELD_LABELS: Record<string, string> = {
   prepaymentAmount: "Предоплата",
   prepaymentPaid: "Предоплата получена",
   transportPolicy: "Транспорт",
+  transportCost: "Транспорт",
+  transportPaidBy: "Кто платит за транспорт",
+  transportClientAmount: "Транспорт от клиента",
   animator_added: "Аниматор назначен",
   animator_removed: "Аниматор снят",
+  animator_invited: "Аниматор приглашён",
+  slot_added: "Слот добавлен",
+  slot_edited: "Слот изменён",
+  slot_removed: "Слот удалён",
+  finalPaymentReceived: "Финальная оплата получена",
+  finalPaymentHanded: "Финальная оплата сдана",
+  finalPaymentMethod: "Способ финальной оплаты",
+  handover_approved: "Передача заказа",
+  handover_rejected: "Передача отклонена",
+  handover_cancelled: "Передача отозвана",
+  releaseReason: "Причина снятия",
+  releaseComment: "Комментарий к снятию",
+  assignmentStatus: "Статус назначения",
 };
+
+export const RELEASE_REASON_LABELS: Record<string, string> = {
+  declined: "Отказался",
+  handed_over: "Передал другому",
+  removed_rotation: "Снят (ротация)",
+  removed_quality: "Снят (качество)",
+  order_cancelled: "Заказ отменён",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "Наличные",
+  transfer: "Перевод",
+};
+
+export const PAYOUT_SOURCE_LABELS: Record<string, string> = {
+  rate_matrix: "По матрице",
+  manual: "Вручную",
+};
+
+// Универсальный перевод значения для истории изменений.
+// Сначала смотрим по полю, потом по известным enum-значениям.
+export function translateChangeValue(
+  field: string,
+  raw: string | null | undefined,
+): string {
+  if (raw === null || raw === undefined || raw === "") return "—";
+
+  // Значения по конкретному полю
+  if (field === "status") {
+    return ORDER_STATUS_LABELS[raw as OrderStatus] ?? raw;
+  }
+  if (field === "transportPolicy") {
+    return TRANSPORT_POLICY_LABELS[raw as TransportPolicy] ?? raw;
+  }
+  if (field === "releaseReason") {
+    return RELEASE_REASON_LABELS[raw] ?? raw;
+  }
+  if (field === "payoutSource") {
+    return PAYOUT_SOURCE_LABELS[raw] ?? raw;
+  }
+  if (field === "payoutMethod" || field === "finalPaymentMethod") {
+    return PAYMENT_METHOD_LABELS[raw] ?? raw;
+  }
+  if (field === "assignmentStatus") {
+    return ASSIGNMENT_STATUS_LABELS[raw as AssignmentStatus] ?? raw;
+  }
+  if (field === "prepaymentPaid") {
+    return raw === "true" || raw === "Да" ? "Да" : "Нет";
+  }
+
+  // Fallback по известным enum-значениям (assignment-статусы)
+  if (raw in ASSIGNMENT_STATUS_LABELS) {
+    return ASSIGNMENT_STATUS_LABELS[raw as AssignmentStatus];
+  }
+  return raw;
+}
