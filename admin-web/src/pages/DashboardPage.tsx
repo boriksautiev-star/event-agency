@@ -7,6 +7,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useOrders } from "../hooks/useOrders";
 import { useAvailability } from "../hooks/useAnimators";
 import { useFinanceSummary } from "../hooks/useFinance";
+import { usePendingApproval } from "../hooks/useHandover";
 import { fmtMoney } from "../lib/financeHelpers";
 import { formatDate, formatTimeRange } from "../lib/format";
 import { ORDER_STATUS_BADGE } from "../lib/orderStatus";
@@ -49,6 +50,8 @@ function lastDayOfMonth(offsetMonths = 0): string {
 export default function DashboardPage() {
   const { user } = useAuth();
   const isDirector = user?.role === "director";
+
+  const pendingHandover = usePendingApproval();
 
   const today = useMemo(() => todayIso(), []);
   const weekAhead = useMemo(() => addDays(today, 7), [today]);
@@ -108,6 +111,28 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Сводка</h1>
+
+      {pendingHandover.count > 0 ? (
+        <Link
+          to="/handover"
+          className="block rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 hover:bg-amber-100 transition"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📥</span>
+              <div>
+                <div className="text-sm font-bold text-amber-900">
+                  Заявки на передачу заказов: {pendingHandover.count}
+                </div>
+                <div className="text-xs text-amber-700">
+                  Ждут вашего подтверждения
+                </div>
+              </div>
+            </div>
+            <span className="text-sm font-semibold text-amber-900">Открыть →</span>
+          </div>
+        </Link>
+      ) : null}
 
       {/* Верхний ряд — метрики */}
       <div

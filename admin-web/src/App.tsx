@@ -28,6 +28,7 @@ import SettingsPage from "./pages/SettingsPage";
 import StaffListPage from "./pages/staff/StaffListPage";
 import StaffDetailPage from "./pages/staff/StaffDetailPage";
 import DashboardPage from "./pages/DashboardPage";
+import HandoverPage from "./pages/handover/HandoverPage";
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/orders/:id" element={<OrderDetailPage />} />
             <Route element={<RequireRole roles={["director", "admin"]} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/handover" element={<HandoverPage />} />
             </Route>
             <Route element={<RequireRole roles={["director"]} />}>
               <Route path="/settings" element={<SettingsPage />} />

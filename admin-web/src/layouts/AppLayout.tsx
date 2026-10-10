@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { to: "/orders", label: "Заказы", icon: "📋" },
   { to: "/clients", label: "Клиенты", icon: "👥" },
   { to: "/animators", label: "Аниматоры", icon: "🎭" },
+  { to: "/handover", label: "Передачи", icon: "🔄" },
   { to: "/catalog", label: "Справочники", icon: "📚" },
   { to: "/finance", label: "Финансы", icon: "💰" },
   { to: "/staff", label: "Сотрудники", icon: "💼", roles: ["director"] },
