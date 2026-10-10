@@ -27,6 +27,7 @@ import AnimatorsListPage from "./pages/animators/AnimatorsListPage";
 import SettingsPage from "./pages/SettingsPage";
 import StaffListPage from "./pages/staff/StaffListPage";
 import StaffDetailPage from "./pages/staff/StaffDetailPage";
+import DashboardPage from "./pages/DashboardPage";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
             <Route element={<RequireRole roles={["director"]} />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/staff" element={<StaffListPage />} />
               <Route path="/staff/:id" element={<StaffDetailPage />} />

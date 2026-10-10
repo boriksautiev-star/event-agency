@@ -8,6 +8,8 @@ export type OrdersQuery = {
   createdFrom?: string;
   createdTo?: string;
   dateTo?: string;
+  hasAnimators?: "true" | "false";
+  prepaymentPaid?: "true" | "false";
   limit?: number;
   offset?: number;
 };
@@ -20,6 +22,8 @@ export async function fetchOrders(query: OrdersQuery): Promise<ListResponse<Orde
   if (query.createdFrom) params.set("createdFrom", query.createdFrom);
   if (query.createdTo) params.set("createdTo", query.createdTo);
   if (query.dateTo) params.set("dateTo", query.dateTo);
+  if (query.hasAnimators) params.set("hasAnimators", query.hasAnimators);
+  if (query.prepaymentPaid) params.set("prepaymentPaid", query.prepaymentPaid);
   if (query.limit !== undefined) params.set("limit", String(query.limit));
   if (query.offset !== undefined) params.set("offset", String(query.offset));
   const { data } = await api.get<ListResponse<Order>>(`/orders?${params.toString()}`);
