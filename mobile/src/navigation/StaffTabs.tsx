@@ -7,7 +7,7 @@ import { StaffAnimatorsStack } from "../screens/staff/StaffAnimatorsStack";
 import { FinanceTabs } from "../screens/finance/FinanceTabs";
 import { colors } from "../theme/colors";
 import { useAuth } from "../auth/AuthContext";
-import { AnimatorProfileScreen } from "../screens/animator/AnimatorProfileScreen";
+import { ProfileStack } from "../screens/common/ProfileStack";
 
 const Tab = createBottomTabNavigator();
 
@@ -73,10 +73,10 @@ export function StaffTabs() {
       ) : null}
       <Tab.Screen
         name="Profile"
-        component={AnimatorProfileScreen}
+        component={ProfileStack}
         options={{
           title: "Профиль",
-          headerShown: true,
+          headerShown: false,
           tabBarLabel: "Профиль",
           tabBarIcon: ({ focused }) => <TabIcon label="👤" focused={focused} />,
         }}

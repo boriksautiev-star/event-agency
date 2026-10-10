@@ -1,10 +1,15 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../../auth/AuthContext";
 import { colors } from "../../theme/colors";
+import type { ProfileStackParamList } from "../common/ProfileStack";
 
 export function AnimatorProfileScreen() {
   const { user, logout } = useAuth();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
   return (
     <View style={styles.container}>
@@ -16,6 +21,13 @@ export function AnimatorProfileScreen() {
         <Text style={styles.meta}>Телефон: {user?.phone}</Text>
         {user?.email ? <Text style={styles.meta}>Email: {user.email}</Text> : null}
       </View>
+
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => navigation.navigate("AboutAgency")}
+      >
+        <Text style={styles.linkButtonText}>🏢  О агентстве</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={logout}>
         <Text style={styles.buttonText}>Выйти</Text>
@@ -38,4 +50,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  linkButton: {
+    marginTop: 24,
+    backgroundColor: colors.card,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  linkButtonText: { color: colors.text, fontWeight: "600", fontSize: 16 },
 });

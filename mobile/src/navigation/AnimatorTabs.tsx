@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text } from "react-native";
 import { AnimatorOrdersStack } from "../screens/animator/AnimatorOrdersStack";
 import { AnimatorReportStack } from "../screens/animator/AnimatorReportStack";
-import { AnimatorProfileScreen } from "../screens/animator/AnimatorProfileScreen";
+import { ProfileStack } from "../screens/common/ProfileStack";
 import { colors } from "../theme/colors";
 
 const Tab = createBottomTabNavigator();
@@ -41,10 +41,10 @@ export function AnimatorTabs() {
       />
       <Tab.Screen
         name="Profile"
-        component={AnimatorProfileScreen}
+        component={ProfileStack}
         options={{
           title: "Профиль",
-          headerShown: true,
+          headerShown: false,
           tabBarLabel: "Профиль",
           tabBarIcon: ({ focused }) => <TabIcon label="👤" focused={focused} />,
         }}
