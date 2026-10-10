@@ -68,6 +68,28 @@ export class FinanceService {
 
     const otherExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
 
+    // Фактически выплачено аниматорам за период (по дате выплаты)
+    const orderIds = orders.map((o) => o.id);
+    const paidAssignments =
+      orderIds.length > 0
+        ? await prisma.orderAnimator.findMany({
+            where: {
+              orderId: { in: orderIds },
+              payoutPaidAt: { not: null, gte: from, lte: to },
+            },
+            select: { payout: true },
+          })
+        : [];
+
+    // Все поступления по этим заказам (за всё время) — для «ожидается к получению»
+    const allPayments =
+      orderIds.length > 0
+        ? await prisma.orderPayment.findMany({
+            where: { orderId: { in: orderIds } },
+            select: { amount: true, type: true },
+          })
+        : [];
+
     let prepayments = 0;
     let finals = 0;
     let refunds = 0;
@@ -84,8 +106,26 @@ export class FinanceService {
       }
     }
     const incomeTotal = prepayments + finals - refunds;
-    const cashProfit = incomeTotal - payouts - transportAgency - otherExpenses;
 
+    // Фактически выплачено аниматорам (только выплаченные назначения)
+    let paidPayouts = 0;
+    for (const a of paidAssignments) paidPayouts += Number(a.payout);
+
+    // Уже получено по этим заказам (за всё время)
+    let alreadyReceived = 0;
+    for (const p of allPayments) {
+      const amt = Number(p.amount);
+      if (p.type === "refund") alreadyReceived -= amt;
+      else alreadyReceived += amt;
+    }
+
+    // Ожидается к получению по заказам этого периода
+    const expectedIncome = Math.max(0, revenue - alreadyReceived);
+
+    // Кассовая прибыль = фактические поступления − фактические выплаты − расходы
+    const cashProfit = incomeTotal - paidPayouts - otherExpenses;
+
+    // Плановая прибыль = выручка (план) − все выплаты (план) − транспорт − расходы
     const profit = revenue - payouts - transportAgency - otherExpenses;
 
     return {
@@ -102,6 +142,8 @@ export class FinanceService {
         },
       },
       cashProfit: +cashProfit.toFixed(2),
+      paidPayouts: +paidPayouts.toFixed(2),
+      expectedIncome: +expectedIncome.toFixed(2),
       payouts: +payouts.toFixed(2),
       transportAgency: +transportAgency.toFixed(2),
       transportClient: +transportClient.toFixed(2),

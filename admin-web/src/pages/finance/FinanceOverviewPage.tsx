@@ -146,6 +146,9 @@ export default function FinanceOverviewPage() {
                 <div className="text-3xl font-extrabold text-emerald-600">
                   {fmtMoney(data.income.total)}
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Фактически пришло за период
+                </p>
               </div>
               <Row label="Предоплаты" value={fmtMoney(data.income.prepayments)} />
               <Row label="Финал" value={fmtMoney(data.income.finals)} />
@@ -159,20 +162,67 @@ export default function FinanceOverviewPage() {
               <p className="text-xs text-gray-500 pt-1">
                 переводом {fmtMoney(data.income.byMethod.transfer)} · наличными {fmtMoney(data.income.byMethod.cash)}
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Кассовая прибыль — реальные деньги */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Кассовая прибыль</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Row
+                label="Пришло от клиентов"
+                value={fmtMoney(data.income.total)}
+                valueClass="text-emerald-600"
+              />
+              <Row
+                label="Выплачено аниматорам (факт)"
+                value={"−" + fmtMoney(data.paidPayouts)}
+              />
+              <Row
+                label="Прочие расходы"
+                value={"−" + fmtMoney(data.otherExpenses)}
+              />
               <div className="border-t border-gray-100 my-2" />
               <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-gray-900">Кассовая прибыль</span>
+                <span className="text-base font-bold text-gray-900">
+                  Итого в кассе
+                </span>
                 <span
                   className={cn(
-                    "text-xl font-extrabold",
+                    "text-2xl font-extrabold",
                     data.cashProfit >= 0 ? "text-emerald-600" : "text-red-600",
                   )}
                 >
                   {fmtMoney(data.cashProfit)}
                 </span>
               </div>
+              <p className="text-xs text-gray-500 pt-2">
+                Показывает реальные деньги: поступило минус фактически выплачено
+                аниматорам и минус прочие расходы.
+              </p>
             </CardContent>
           </Card>
+
+          {/* Ожидается к получению */}
+          {data.expectedIncome > 0 ? (
+            <Card>
+              <CardContent className="py-4 px-5 flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="text-xs text-gray-500">
+                    Ожидается к получению (по заказам периода)
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Сколько клиенты ещё должны доплатить за эти заказы
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-amber-600">
+                  {fmtMoney(data.expectedIncome)}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* Показатели */}
           <Card>

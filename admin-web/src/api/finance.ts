@@ -15,6 +15,8 @@ export type FinanceSummary = {
     byMethod: { transfer: number; cash: number };
   };
   cashProfit: number;
+  paidPayouts: number;
+  expectedIncome: number;
   payouts: number;
   transportAgency: number;
   transportClient: number;
