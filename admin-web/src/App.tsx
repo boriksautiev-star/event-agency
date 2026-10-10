@@ -41,8 +41,10 @@ export default function App() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
-            <Route element={<RequireRole roles={["director"]} />}>
+            <Route element={<RequireRole roles={["director", "admin"]} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+            </Route>
+            <Route element={<RequireRole roles={["director"]} />}>
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/staff" element={<StaffListPage />} />
               <Route path="/staff/:id" element={<StaffDetailPage />} />

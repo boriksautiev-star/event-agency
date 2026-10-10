@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { cn } from "../lib/utils";
+import { useAuth } from "../auth/AuthContext";
 import { useOrders } from "../hooks/useOrders";
 import { useAvailability } from "../hooks/useAnimators";
 import { useFinanceSummary } from "../hooks/useFinance";
@@ -46,6 +47,9 @@ function lastDayOfMonth(offsetMonths = 0): string {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const isDirector = user?.role === "director";
+
   const today = useMemo(() => todayIso(), []);
   const weekAhead = useMemo(() => addDays(today, 7), [today]);
   const monthFrom = useMemo(() => firstDayOfMonth(), []);
@@ -82,7 +86,6 @@ export default function DashboardPage() {
   const monthSummary = useFinanceSummary({ from: monthFrom, to: monthTo });
   const prevMonthSummary = useFinanceSummary({ from: prevMonthFrom, to: prevMonthTo });
 
-  // Свободные аниматоры сегодня
   const freeAnimators = useMemo(() => {
     const items = availability.data ?? [];
     return items.filter((a) => {
@@ -93,7 +96,6 @@ export default function DashboardPage() {
 
   const totalAnimators = availability.data?.length ?? 0;
 
-  // Сравнение кассовой прибыли с прошлым месяцем
   const monthCash = monthSummary.data?.cashProfit ?? 0;
   const prevCash = prevMonthSummary.data?.cashProfit ?? 0;
   const cashDelta = prevCash > 0 ? ((monthCash - prevCash) / prevCash) * 100 : null;
@@ -103,7 +105,12 @@ export default function DashboardPage() {
       <h1 className="text-xl font-bold text-gray-900">Сводка</h1>
 
       {/* Верхний ряд — метрики */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div
+        className={cn(
+          "grid grid-cols-2 gap-4",
+          isDirector ? "md:grid-cols-4" : "md:grid-cols-3",
+        )}
+      >
         <MetricCard
           label="Заказов сегодня"
           value={String(todayOrders.data?.total ?? "—")}
@@ -121,48 +128,55 @@ export default function DashboardPage() {
           hint="На 7 дней вперёд"
           color={(noAnimators.data?.total ?? 0) > 0 ? "red" : "gray"}
         />
-        <MetricCard
-          label="Без предоплаты"
-          value={String(noPrepayment.data?.total ?? "—")}
-          hint="На 7 дней вперёд"
-          color={(noPrepayment.data?.total ?? 0) > 0 ? "amber" : "gray"}
-        />
+        {isDirector ? (
+          <MetricCard
+            label="Без предоплаты"
+            value={String(noPrepayment.data?.total ?? "—")}
+            hint="На 7 дней вперёд"
+            color={(noPrepayment.data?.total ?? 0) > 0 ? "amber" : "gray"}
+          />
+        ) : null}
       </div>
 
       {/* Средний ряд */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Касса за месяц */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Касса за текущий месяц</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-3xl font-extrabold text-emerald-600">
-              {monthSummary.isLoading ? "…" : fmtMoney(monthCash)}
-            </div>
-            {cashDelta !== null ? (
-              <div
-                className={cn(
-                  "text-xs font-semibold",
-                  cashDelta >= 0 ? "text-emerald-600" : "text-red-600",
-                )}
-              >
-                {cashDelta >= 0 ? "▲" : "▼"} {Math.abs(cashDelta).toFixed(1)}% к прошлому месяцу
+      <div
+        className={cn(
+          "grid gap-4",
+          isDirector ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1",
+        )}
+      >
+        {isDirector ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Касса за текущий месяц</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-3xl font-extrabold text-emerald-600">
+                {monthSummary.isLoading ? "…" : fmtMoney(monthCash)}
               </div>
-            ) : (
-              <div className="text-xs text-gray-400">Нет данных для сравнения</div>
-            )}
-            {monthSummary.data ? (
-              <div className="pt-2 text-xs text-gray-500 space-y-1">
-                <div>Пришло: {fmtMoney(monthSummary.data.income.total)}</div>
-                <div>Выплачено аниматорам: {fmtMoney(monthSummary.data.paidPayouts)}</div>
-                <div>Прочие расходы: {fmtMoney(monthSummary.data.otherExpenses)}</div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+              {cashDelta !== null ? (
+                <div
+                  className={cn(
+                    "text-xs font-semibold",
+                    cashDelta >= 0 ? "text-emerald-600" : "text-red-600",
+                  )}
+                >
+                  {cashDelta >= 0 ? "▲" : "▼"} {Math.abs(cashDelta).toFixed(1)}% к прошлому месяцу
+                </div>
+              ) : (
+                <div className="text-xs text-gray-400">Нет данных для сравнения</div>
+              )}
+              {monthSummary.data ? (
+                <div className="pt-2 text-xs text-gray-500 space-y-1">
+                  <div>Пришло: {fmtMoney(monthSummary.data.income.total)}</div>
+                  <div>Выплачено аниматорам: {fmtMoney(monthSummary.data.paidPayouts)}</div>
+                  <div>Прочие расходы: {fmtMoney(monthSummary.data.otherExpenses)}</div>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        ) : null}
 
-        {/* Ближайшие заказы */}
         <Card>
           <CardHeader>
             <CardTitle>Ближайшие заказы</CardTitle>
@@ -199,8 +213,13 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Нижний ряд — списки требующих внимания */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Нижний ряд */}
+      <div
+        className={cn(
+          "grid gap-4",
+          isDirector ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1",
+        )}
+      >
         <Card>
           <CardHeader>
             <CardTitle>Требуют назначения аниматора</CardTitle>
@@ -234,38 +253,40 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ожидают предоплату</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {noPrepayment.isLoading ? (
-              <div className="text-sm text-gray-500">Загрузка…</div>
-            ) : (noPrepayment.data?.items ?? []).length === 0 ? (
-              <div className="text-sm text-emerald-600">Все предоплаты получены ✓</div>
-            ) : (
-              <div className="space-y-2">
-                {(noPrepayment.data?.items ?? []).slice(0, 5).map((o) => (
-                  <Link
-                    key={o.id}
-                    to={`/orders/${o.id}`}
-                    className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-gray-800 truncate">
-                        {o.title}
+        {isDirector ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ожидают предоплату</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {noPrepayment.isLoading ? (
+                <div className="text-sm text-gray-500">Загрузка…</div>
+              ) : (noPrepayment.data?.items ?? []).length === 0 ? (
+                <div className="text-sm text-emerald-600">Все предоплаты получены ✓</div>
+              ) : (
+                <div className="space-y-2">
+                  {(noPrepayment.data?.items ?? []).slice(0, 5).map((o) => (
+                    <Link
+                      key={o.id}
+                      to={`/orders/${o.id}`}
+                      className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-800 truncate">
+                          {o.title}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatDate(o.eventDate)} · {fmtMoney(Number(o.prepaymentAmount))}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {formatDate(o.eventDate)} · {fmtMoney(Number(o.prepaymentAmount))}
-                      </div>
-                    </div>
-                    <Badge variant="warning">Ждёт оплату</Badge>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      <Badge variant="warning">Ждёт оплату</Badge>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );

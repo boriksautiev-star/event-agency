@@ -11,7 +11,7 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Сводка", icon: "📊", roles: ["director"] },
+  { to: "/dashboard", label: "Сводка", icon: "📊" },
   { to: "/orders", label: "Заказы", icon: "📋" },
   { to: "/clients", label: "Клиенты", icon: "👥" },
   { to: "/animators", label: "Аниматоры", icon: "🎭" },
