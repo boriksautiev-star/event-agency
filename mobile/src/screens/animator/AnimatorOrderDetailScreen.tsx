@@ -13,7 +13,8 @@ import {
   Platform,
   Keyboard,
 } from "react-native";
-import { useFocusEffect, useRoute, RouteProp } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../api/client";
 import type { AssignmentStatus, Order, PaymentMethod } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
@@ -22,6 +23,9 @@ import {
   ReleaseReasonModal,
   ReleaseReasonValue,
 } from "../../components/ReleaseReasonModal";
+import { fetchMyIncoming, HandoverRequest } from "../../api/handover";
+import { CreateHandoverModal } from "../../components/CreateHandoverModal";
+import type { AnimatorOrdersStackParamList } from "./AnimatorOrdersStack";
 import {
   ASSIGNMENT_STATUS_COLORS,
   ASSIGNMENT_STATUS_LABELS,
@@ -40,6 +44,8 @@ function fmtMoney(v: any): string {
 
 export function AnimatorOrderDetailScreen() {
   const route = useRoute<RouteT>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AnimatorOrdersStackParamList>>();
   const { orderId } = route.params;
   const { user } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
@@ -48,6 +54,8 @@ export function AnimatorOrderDetailScreen() {
 
   const [transportInput, setTransportInput] = useState("");
   const [declineModalVisible, setDeclineModalVisible] = useState(false);
+  const [handoverModalVisible, setHandoverModalVisible] = useState(false);
+  const [incomingHandover, setIncomingHandover] = useState<HandoverRequest | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -60,10 +68,26 @@ export function AnimatorOrderDetailScreen() {
     }
   }, [orderId]);
 
+  const loadIncoming = useCallback(async () => {
+    try {
+      const items = await fetchMyIncoming();
+      const active = items.find(
+        (h) =>
+          h.orderId === orderId &&
+          (h.status === "pending_receiver" ||
+            h.status === "pending_approval"),
+      );
+      setIncomingHandover(active ?? null);
+    } catch {
+      setIncomingHandover(null);
+    }
+  }, [orderId]);
+
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load]),
+      loadIncoming();
+    }, [load, loadIncoming]),
   );
 
   const myAssignment = order?.animators?.find((a) => a.animatorId === user?.id);
@@ -205,6 +229,29 @@ export function AnimatorOrderDetailScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        {incomingHandover ? (
+          <TouchableOpacity
+            style={styles.incomingBanner}
+            activeOpacity={0.7}
+            onPress={() =>
+              navigation.navigate("HandoverDetail", {
+                requestId: incomingHandover.id,
+              })
+            }
+          >
+            <Text style={styles.incomingBannerTitle}>
+              📥 Вам поступила заявка на передачу
+            </Text>
+            <Text style={styles.incomingBannerMeta}>
+              от {incomingHandover.fromAnimator.firstName}{" "}
+              {incomingHandover.fromAnimator.lastName}
+            </Text>
+            <Text style={styles.incomingBannerHint}>
+              Нажмите, чтобы открыть →
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <View style={styles.card}>
           <Text style={styles.title}>{order.title}</Text>
           {order.description ? (
@@ -437,6 +484,20 @@ export function AnimatorOrderDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {status === "accepted" &&
+        order.status !== "completed" &&
+        order.status !== "cancelled" &&
+        (myAssignment as any)?.slotId &&
+        !incomingHandover ? (
+          <TouchableOpacity
+            style={[styles.btn, styles.btnHandover, busy && styles.btnDisabled]}
+            disabled={busy}
+            onPress={() => setHandoverModalVisible(true)}
+          >
+            <Text style={styles.btnText}>🔄 Передать заказ</Text>
+          </TouchableOpacity>
+        ) : null}
+
         {busy ? <ActivityIndicator style={{ marginTop: 12 }} color={colors.primary} /> : null}
       </ScrollView>
 
@@ -446,6 +507,20 @@ export function AnimatorOrderDetailScreen() {
         onCancel={() => setDeclineModalVisible(false)}
         onSubmit={handleDeclineSubmit}
       />
+
+      {myAssignment && (myAssignment as any)?.slotId ? (
+        <CreateHandoverModal
+          visible={handoverModalVisible}
+          orderId={order.id}
+          slotId={(myAssignment as any).slotId}
+          onClose={() => setHandoverModalVisible(false)}
+          onCreated={() => {
+            setHandoverModalVisible(false);
+            loadIncoming();
+            load();
+          }}
+        />
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -539,5 +614,33 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 8,
     fontStyle: "italic",
+  },
+  btnHandover: {
+    backgroundColor: "#6366f1",
+    marginTop: 10,
+  },
+  incomingBanner: {
+    backgroundColor: "#eff6ff",
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+  },
+  incomingBannerTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1e40af",
+  },
+  incomingBannerMeta: {
+    fontSize: 13,
+    color: "#1e3a8a",
+    marginTop: 4,
+  },
+  incomingBannerHint: {
+    fontSize: 12,
+    color: "#3b82f6",
+    marginTop: 6,
+    fontWeight: "600",
   },
 });

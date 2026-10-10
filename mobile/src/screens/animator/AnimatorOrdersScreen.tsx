@@ -12,6 +12,7 @@ import {
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../api/client";
+import { fetchMyIncoming } from "../../api/handover";
 import type { ListResponse, Order } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { colors } from "../../theme/colors";
@@ -31,6 +32,7 @@ export function AnimatorOrdersScreen() {
   const [items, setItems] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [incomingCount, setIncomingCount] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -41,6 +43,14 @@ export function AnimatorOrdersScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+    try {
+      const incoming = await fetchMyIncoming();
+      setIncomingCount(
+        incoming.filter((h) => h.status === "pending_receiver").length,
+      );
+    } catch {
+      // счётчик не критичен
     }
   }, []);
 
@@ -78,6 +88,32 @@ export function AnimatorOrdersScreen() {
       keyExtractor={(o) => o.id}
       contentContainerStyle={{ padding: 12 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      ListHeaderComponent={
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={[
+              styles.headerBtn,
+              incomingCount > 0 && styles.headerBtnActive,
+            ]}
+            onPress={() => navigation.navigate("HandoverInbox")}
+          >
+            <Text
+              style={[
+                styles.headerBtnText,
+                incomingCount > 0 && styles.headerBtnTextActive,
+              ]}
+            >
+              📥 Входящие{incomingCount > 0 ? ` (${incomingCount})` : ""}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => navigation.navigate("HandoverOutgoing")}
+          >
+            <Text style={styles.headerBtnText}>📤 Мои заявки</Text>
+          </TouchableOpacity>
+        </View>
+      }
       ListEmptyComponent={
         <View style={styles.center}>
           <Text style={styles.muted}>Пока нет заказов</Text>
@@ -150,4 +186,20 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", marginTop: 10, flexWrap: "wrap" },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   badgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  headerRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  headerBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  headerBtnActive: {
+    backgroundColor: "#fef3c7",
+    borderColor: "#f59e0b",
+  },
+  headerBtnText: { fontSize: 14, fontWeight: "600", color: colors.text },
+  headerBtnTextActive: { color: "#92400e" },
 });

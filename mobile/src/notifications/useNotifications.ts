@@ -5,7 +5,7 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { navigateToOrder } from "../navigation/navigationRef";
+import { navigateToOrder, navigateToHandover } from "../navigation/navigationRef";
 
 // Как показывать уведомления, когда приложение открыто
 Notifications.setNotificationHandler({
@@ -94,15 +94,34 @@ export function useNotifications() {
 
   // orderId, который ждёт логина/готовности навигатора
   const pendingOrderIdRef = useRef<string | null>(null);
+  const pendingHandoverIdRef = useRef<string | null>(null);
 
   const handleResponse = (data: any) => {
-    const oid = typeof data?.orderId === "string" ? data.orderId : null;
-    if (!oid) return;
-    console.log("[push] tap -> orderId:", oid);
-    if (userRef.current) {
-      setTimeout(() => navigateToOrder(oid), 100);
-    } else {
-      pendingOrderIdRef.current = oid;
+    const type = typeof data?.type === "string" ? data.type : null;
+    const isHandover = type !== null && type.startsWith("handover_");
+    const requestId =
+      typeof data?.requestId === "string" ? data.requestId : null;
+    const orderId = typeof data?.orderId === "string" ? data.orderId : null;
+
+    // Handover push → экран заявки
+    if (isHandover && requestId) {
+      console.log("[push] tap -> handover:", requestId, "type:", type);
+      if (userRef.current) {
+        setTimeout(() => navigateToHandover(requestId), 100);
+      } else {
+        pendingHandoverIdRef.current = requestId;
+      }
+      return;
+    }
+
+    // Order push → экран заказа
+    if (orderId) {
+      console.log("[push] tap -> order:", orderId);
+      if (userRef.current) {
+        setTimeout(() => navigateToOrder(orderId), 100);
+      } else {
+        pendingOrderIdRef.current = orderId;
+      }
     }
   };
 
@@ -137,13 +156,20 @@ export function useNotifications() {
     };
   }, []);
 
-  // Когда user появился после логина и есть pendingOrderId - навигируем
+  // Когда user появился после логина: pendingOrderId / pendingHandoverId
   useEffect(() => {
     if (!user) return;
+    const hid = pendingHandoverIdRef.current;
+    if (hid) {
+      pendingHandoverIdRef.current = null;
+      setTimeout(() => navigateToHandover(hid), 400);
+      return;
+    }
     const oid = pendingOrderIdRef.current;
-    if (!oid) return;
-    pendingOrderIdRef.current = null;
-    setTimeout(() => navigateToOrder(oid), 400);
+    if (oid) {
+      pendingOrderIdRef.current = null;
+      setTimeout(() => navigateToOrder(oid), 400);
+    }
   }, [user]);
 
   return { expoPushToken };
