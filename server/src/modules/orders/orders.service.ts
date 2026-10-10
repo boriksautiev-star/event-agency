@@ -984,6 +984,54 @@ export class OrdersService {
       updateData.status = data.status;
       if (data.status === "accepted" || data.status === "declined") updateData.respondedAt = new Date();
       if (data.status === "completed") updateData.completedAt = new Date();
+
+      // Расставание: decline (от аниматора) или removed (от staff)
+      if (data.status === "declined") {
+        const reason = data.releaseReason ?? "declined";
+        if (reason !== "declined" && reason !== "handed_over") {
+          throw new AppError(
+            "Для отказа допустимы причины declined или handed_over.",
+            400,
+            "BAD_RELEASE_REASON",
+          );
+        }
+        const comment = (data.releaseComment ?? "").trim();
+        if (comment.length < 3) {
+          throw new AppError(
+            "Укажите причину отказа (минимум 3 символа).",
+            400,
+            "RELEASE_COMMENT_REQUIRED",
+          );
+        }
+        updateData.releaseReason = reason;
+        updateData.releaseComment = comment;
+        updateData.releasedAt = new Date();
+      }
+
+      if (data.status === "removed") {
+        if (role === "animator") {
+          throw new AppError(
+            "Аниматор не может снять себя со своего заказа.",
+            403,
+            "FORBIDDEN",
+          );
+        }
+        const reason = data.releaseReason;
+        if (
+          reason !== "removed_rotation" &&
+          reason !== "removed_quality" &&
+          reason !== "order_cancelled"
+        ) {
+          throw new AppError(
+            "Укажите причину снятия (removed_rotation, removed_quality или order_cancelled).",
+            400,
+            "RELEASE_REASON_REQUIRED",
+          );
+        }
+        updateData.releaseReason = reason;
+        updateData.releaseComment = (data.releaseComment ?? "").trim() || null;
+        updateData.releasedAt = new Date();
+      }
     }
 
     if (role !== "animator") {
@@ -1109,17 +1157,36 @@ export class OrdersService {
     });
   }
 
-  static async removeAssignment(orderId: string, animatorId: string, changedBy: string) {
+  static async removeAssignment(
+    orderId: string,
+    animatorId: string,
+    changedBy: string,
+    release?: { releaseReason: string; releaseComment?: string | null },
+  ) {
     const assignment = await prisma.orderAnimator.findUnique({
       where: { orderId_animatorId: { orderId, animatorId } },
       include: { animator: { select: { firstName: true, lastName: true } } },
     });
     if (!assignment) throw new AppError("Назначение не найдено", 404, "ASSIGNMENT_NOT_FOUND");
 
+    const reason = release?.releaseReason;
+    if (reason !== "removed_rotation" && reason !== "removed_quality" && reason !== "order_cancelled") {
+      throw new AppError(
+        "Укажите причину снятия (removed_rotation, removed_quality или order_cancelled).",
+        400,
+        "RELEASE_REASON_REQUIRED",
+      );
+    }
+
     return prisma.$transaction(async (tx) => {
       await tx.orderAnimator.update({
         where: { orderId_animatorId: { orderId, animatorId } },
-        data: { status: "removed" },
+        data: {
+          status: "removed",
+          releaseReason: reason as any,
+          releaseComment: (release?.releaseComment ?? '').trim() || null,
+          releasedAt: new Date(),
+        },
       });
 
       await this.logChange(

@@ -5,6 +5,7 @@ import {
   CreateSlotSchema,
   ListOrdersQuerySchema,
   MarkFinalPaymentSchema,
+  RemoveAssignmentSchema,
   UpdateAssignmentSchema,
   UpdateOrderSchema,
   UpdateOrderStatusSchema,
@@ -134,8 +135,9 @@ export class OrdersController {
   static async removeAssignment(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) throw new AppError("Требуется авторизация", 401);
+      const body = RemoveAssignmentSchema.parse(req.body ?? {});
       const result = await OrdersService.removeAssignment(
-        req.params.id!, req.params.animatorId!, req.user.sub,
+        req.params.id!, req.params.animatorId!, req.user.sub, body,
       );
       res.json(result);
     } catch (e) { next(e); }

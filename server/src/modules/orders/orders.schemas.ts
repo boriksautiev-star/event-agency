@@ -98,6 +98,14 @@ export const AssignAnimatorSchema = z.object({
   payout: z.number().min(0).optional(),
 });
 
+export const ReleaseReasonEnum = z.enum([
+  "declined",
+  "handed_over",
+  "removed_rotation",
+  "removed_quality",
+  "order_cancelled",
+]);
+
 export const UpdateAssignmentSchema = z.object({
   status: z.enum([
     ASSIGNMENT_STATUS.ACCEPTED,
@@ -108,7 +116,20 @@ export const UpdateAssignmentSchema = z.object({
   comment: z.string().max(500).optional().nullable(),
   payout: z.number().min(0).optional(),
   slotId: z.string().uuid().optional(),
+  releaseReason: ReleaseReasonEnum.optional(),
+  releaseComment: z.string().max(500).optional().nullable(),
 });
+
+export const RemoveAssignmentSchema = z.object({
+  releaseReason: z.enum([
+    "removed_rotation",
+    "removed_quality",
+    "order_cancelled",
+  ]),
+  releaseComment: z.string().max(500).optional().nullable(),
+});
+
+export type RemoveAssignmentInput = z.infer<typeof RemoveAssignmentSchema>;
 
 export const CreateSlotSchema = OrderSlotItemSchema;
 export const UpdateSlotSchema = z.object({

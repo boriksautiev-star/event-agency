@@ -19,4 +19,11 @@ router.get(
   AnimatorsController.myReport,
 );
 
+router.get(
+  "/:id/report",
+  requireAuth,
+  requirePermission(PERMISSIONS.USERS_READ),
+  AnimatorsController.reportById,
+);
+
 export default router;

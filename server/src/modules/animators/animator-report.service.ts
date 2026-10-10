@@ -32,6 +32,58 @@ export class AnimatorReportService {
       },
     };
 
+    // Релизы (отказы + снятия) за период — по releasedAt (fallback respondedAt)
+    const releasesRaw = await prisma.orderAnimator.findMany({
+      where: {
+        animatorId,
+        status: { in: ["declined", "removed"] },
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            title: true,
+            eventDate: true,
+            startTime: true,
+            endTime: true,
+          },
+        },
+      },
+    });
+
+    const releases = releasesRaw
+      .map((r) => {
+        const at = r.releasedAt ?? r.respondedAt ?? r.invitedAt;
+        const payout = Number(r.payout);
+        return {
+          assignmentId: r.id,
+          orderId: r.orderId,
+          orderTitle: r.order.title,
+          eventDate: r.order.eventDate,
+          status: r.status as "declined" | "removed",
+          releaseReason: r.releaseReason,
+          releaseComment: r.releaseComment,
+          releasedAt: at,
+          payout,
+        };
+      })
+      .filter((r) => r.releasedAt && r.releasedAt >= from && r.releasedAt <= to)
+      .sort((a, b) => +b.releasedAt! - +a.releasedAt!);
+
+    const byReason = {
+      declined: 0,
+      handed_over: 0,
+      removed_rotation: 0,
+      removed_quality: 0,
+      order_cancelled: 0,
+    } as Record<string, number>;
+    let lostPayout = 0;
+    for (const r of releases) {
+      const key = r.releaseReason ?? "declined";
+      byReason[key] = (byReason[key] ?? 0) + 1;
+      lostPayout += r.payout;
+    }
+
     if (query.status) {
       where.order.status = query.status;
     }
@@ -110,6 +162,13 @@ export class AnimatorReportService {
       },
     );
 
+    const acceptedCount = summary.ordersCount;
+    const declinedCount = releases.filter((r) => r.status === "declined").length;
+    const removedCount = releases.filter((r) => r.status === "removed").length;
+    const offersCount = acceptedCount + declinedCount + removedCount;
+    const acceptRate =
+      offersCount > 0 ? +((acceptedCount / offersCount) * 100).toFixed(1) : 0;
+
     return {
       period: { from: query.from, to: query.to },
       scope: query.scope ?? "all",
@@ -121,7 +180,15 @@ export class AnimatorReportService {
         payoutPaidCash: +summary.payoutPaidCash.toFixed(2),
         payoutPaidTransfer: +summary.payoutPaidTransfer.toFixed(2),
         payoutRemaining: +summary.payoutRemaining.toFixed(2),
+        acceptedCount,
+        declinedCount,
+        removedCount,
+        offersCount,
+        acceptRate,
+        lostPayout: +lostPayout.toFixed(2),
+        byReason,
       },
+      releases,
       items: mapped,
     };
   }

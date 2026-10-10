@@ -194,6 +194,14 @@ enum AssignmentStatus {
   completed
 }
 
+enum ReleaseReason {
+  declined
+  handed_over
+  removed_rotation
+  removed_quality
+  order_cancelled
+}
+
 enum TransportPolicy {
   agency_pays
   client_one_way
@@ -303,6 +311,10 @@ model OrderAnimator {
   payoutPaidAt DateTime?      @map("payout_paid_at")
   payoutPaidBy String?        @map("payout_paid_by")
   payoutMethod PaymentMethod? @map("payout_method")
+
+  releaseReason  ReleaseReason? @map("release_reason")
+  releaseComment String?        @map("release_comment")
+  releasedAt     DateTime?      @map("released_at")
 
   order    Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
   animator User       @relation("AnimatorAssignments", fields: [animatorId], references: [id], onDelete: Restrict)
