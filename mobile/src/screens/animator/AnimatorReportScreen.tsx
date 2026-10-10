@@ -33,6 +33,18 @@ type ReportItem = {
   slots: { characterName: string; durationMin: number }[];
 };
 
+type ReleaseItem = {
+  assignmentId: string;
+  orderId: string;
+  orderTitle: string;
+  eventDate: string;
+  status: "declined" | "removed";
+  releaseReason: string | null;
+  releaseComment: string | null;
+  releasedAt: string;
+  payout: number;
+};
+
 type Report = {
   period: { from: string; to: string };
   scope: string;
@@ -44,7 +56,15 @@ type Report = {
     payoutPaidCash: number;
     payoutPaidTransfer: number;
     payoutRemaining: number;
+    acceptedCount: number;
+    declinedCount: number;
+    removedCount: number;
+    offersCount: number;
+    acceptRate: number;
+    lostPayout: number;
+    byReason: Record<string, number>;
   };
+  releases: ReleaseItem[];
   items: ReportItem[];
 };
 
@@ -241,6 +261,69 @@ export function AnimatorReportScreen() {
         </View>
       ) : null}
 
+      {report ? (
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Отказы и снятия</Text>
+
+          <View style={styles.metricsRow}>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{report.summary.declinedCount}</Text>
+              <Text style={styles.metricLabel}>Отказался</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{report.summary.removedCount}</Text>
+              <Text style={styles.metricLabel}>Снят</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{report.summary.acceptRate}%</Text>
+              <Text style={styles.metricLabel}>Принятие</Text>
+            </View>
+          </View>
+
+          {report.summary.lostPayout > 0 ? (
+            <View style={[styles.totalRow, styles.grandTotalRow]}>
+              <Text style={styles.grandLabel}>Упущено из-за отказов</Text>
+              <Text style={[styles.grandValue, { color: colors.danger }]}>
+                {fmt(report.summary.lostPayout)} ₽
+              </Text>
+            </View>
+          ) : null}
+
+          {report.releases.length > 0 ? (
+            <View style={{ marginTop: 10 }}>
+              {report.releases.slice(0, 10).map((r) => (
+                <View key={r.assignmentId} style={styles.releaseRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.releaseTitle} numberOfLines={1}>
+                      {r.orderTitle}
+                    </Text>
+                    <Text style={styles.releaseMeta}>
+                      {new Date(r.eventDate).toLocaleDateString("ru-RU")} ·{" "}
+                      {r.status === "declined" ? "отказ" : "снят"}
+                    </Text>
+                    {r.releaseComment ? (
+                      <Text style={styles.releaseComment} numberOfLines={2}>
+                        «{r.releaseComment}»
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.releaseLoss}>−{fmt(r.payout)} ₽</Text>
+                </View>
+              ))}
+              {report.releases.length > 10 ? (
+                <Text style={styles.releaseMore}>
+                  …и ещё {report.releases.length - 10}
+                </Text>
+              ) : null}
+            </View>
+          ) : (
+            <Text style={[styles.muted, { marginTop: 8, textAlign: "left" }]}>
+              За период отказов не было
+            </Text>
+          )}
+        </View>
+      ) : null}
+
       {report && report.items.length > 0 ? (
         <Text style={styles.listTitle}>Заказы · тап, чтобы открыть</Text>
       ) : null}
@@ -405,4 +488,28 @@ const styles = StyleSheet.create({
   badgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
   statusRow: { flexDirection: "row", marginTop: 6, flexWrap: "wrap", alignItems: "center", gap: 6 },
   openHint: { fontSize: 11, color: colors.primary, fontWeight: "700", marginLeft: "auto" },
+
+  releaseRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  releaseTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
+  releaseMeta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  releaseComment: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontStyle: "italic",
+    marginTop: 3,
+  },
+  releaseLoss: { fontSize: 13, fontWeight: "700", color: colors.danger },
+  releaseMore: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 8,
+    textAlign: "center",
+  },
 });

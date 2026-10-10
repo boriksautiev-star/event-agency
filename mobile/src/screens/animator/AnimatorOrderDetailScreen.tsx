@@ -19,6 +19,10 @@ import type { AssignmentStatus, Order, PaymentMethod } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { colors } from "../../theme/colors";
 import {
+  ReleaseReasonModal,
+  ReleaseReasonValue,
+} from "../../components/ReleaseReasonModal";
+import {
   ASSIGNMENT_STATUS_COLORS,
   ASSIGNMENT_STATUS_LABELS,
   ORDER_STATUS_COLORS,
@@ -43,6 +47,7 @@ export function AnimatorOrderDetailScreen() {
   const [busy, setBusy] = useState(false);
 
   const [transportInput, setTransportInput] = useState("");
+  const [declineModalVisible, setDeclineModalVisible] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -70,11 +75,22 @@ export function AnimatorOrderDetailScreen() {
     }
   }, [myAssignment]);
 
-  const changeStatus = async (status: AssignmentStatus) => {
+  const changeStatus = async (
+    status: AssignmentStatus,
+    release?: { releaseReason: ReleaseReasonValue; releaseComment: string },
+  ) => {
     if (!user || !order) return;
     setBusy(true);
     try {
-      await api.patch(`/api/orders/${order.id}/animators/${user.id}`, { status });
+      await api.patch(`/api/orders/${order.id}/animators/${user.id}`, {
+        status,
+        ...(release
+          ? {
+              releaseReason: release.releaseReason,
+              releaseComment: release.releaseComment,
+            }
+          : {}),
+      });
       await load();
       const labels: Record<string, string> = {
         accepted: "Вы приняли заказ",
@@ -87,6 +103,17 @@ export function AnimatorOrderDetailScreen() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleDeclineSubmit = async (
+    reason: ReleaseReasonValue,
+    comment: string,
+  ) => {
+    setDeclineModalVisible(false);
+    await changeStatus("declined", {
+      releaseReason: reason,
+      releaseComment: comment,
+    });
   };
 
   const markFinalPayment = async (method: PaymentMethod) => {
@@ -393,7 +420,7 @@ export function AnimatorOrderDetailScreen() {
             <TouchableOpacity
               style={[styles.btn, styles.btnDecline, busy && styles.btnDisabled]}
               disabled={busy}
-              onPress={() => changeStatus("declined")}
+              onPress={() => setDeclineModalVisible(true)}
             >
               <Text style={styles.btnText}>Отклонить</Text>
             </TouchableOpacity>
@@ -412,6 +439,13 @@ export function AnimatorOrderDetailScreen() {
 
         {busy ? <ActivityIndicator style={{ marginTop: 12 }} color={colors.primary} /> : null}
       </ScrollView>
+
+      <ReleaseReasonModal
+        visible={declineModalVisible}
+        busy={busy}
+        onCancel={() => setDeclineModalVisible(false)}
+        onSubmit={handleDeclineSubmit}
+      />
     </KeyboardAvoidingView>
   );
 }
