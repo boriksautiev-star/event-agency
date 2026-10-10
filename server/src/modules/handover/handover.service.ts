@@ -1,6 +1,7 @@
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../utils/AppError";
 import { RatesService } from "../rates/rates.service";
+import { PushService } from "../push/push.service";
 import {
   CreateHandoverInput,
   RejectHandoverInput,
@@ -154,7 +155,7 @@ export class HandoverService {
       throw new AppError(free.reason, 409, "ANIMATOR_BUSY");
     }
 
-    return prisma.handoverRequest.create({
+    const created = await prisma.handoverRequest.create({
       data: {
         orderId,
         slotId,
@@ -170,6 +171,21 @@ export class HandoverService {
         toAnimator: { select: { id: true, firstName: true, lastName: true, phone: true } },
       },
     });
+
+    try {
+      const fromName = `${created.fromAnimator.firstName} ${created.fromAnimator.lastName}`.trim();
+      await PushService.notifyHandoverIncoming(
+        created.toAnimatorId,
+        fromName,
+        created.order.title,
+        created.id,
+        created.orderId,
+      );
+    } catch (e) {
+      console.warn("[handover] push notifyHandoverIncoming failed:", e);
+    }
+
+    return created;
   }
 
   // ========== Списки ==========
@@ -261,7 +277,7 @@ export class HandoverService {
       throw new AppError(free.reason, 409, "ANIMATOR_BUSY");
     }
 
-    return prisma.handoverRequest.update({
+    const updated = await prisma.handoverRequest.update({
       where: { id: requestId },
       data: {
         status: "pending_approval",
@@ -273,6 +289,21 @@ export class HandoverService {
         toAnimator: { select: { id: true, firstName: true, lastName: true } },
       },
     });
+
+    try {
+      const toName = `${updated.toAnimator.firstName} ${updated.toAnimator.lastName}`.trim();
+      await PushService.notifyHandoverAccepted(
+        updated.fromAnimatorId,
+        toName,
+        updated.order.title,
+        updated.id,
+        updated.orderId,
+      );
+    } catch (e) {
+      console.warn("[handover] push notifyHandoverAccepted failed:", e);
+    }
+
+    return updated;
   }
 
   static async decline(
@@ -289,14 +320,34 @@ export class HandoverService {
       throw new AppError("Заявка не в статусе ожидания получателя", 409, "BAD_STATUS");
     }
 
-    return prisma.handoverRequest.update({
+    const updated = await prisma.handoverRequest.update({
       where: { id: requestId },
       data: {
         status: "rejected_by_receiver",
         resolvedAt: new Date(),
         rejectComment: input.rejectComment ?? null,
       },
+      include: {
+        order: { select: { title: true } },
+        toAnimator: { select: { firstName: true, lastName: true } },
+      },
     });
+
+    try {
+      const toName = `${updated.toAnimator.firstName} ${updated.toAnimator.lastName}`.trim();
+      await PushService.notifyHandoverDeclined(
+        updated.fromAnimatorId,
+        toName,
+        updated.order.title,
+        updated.id,
+        updated.orderId,
+        updated.rejectComment,
+      );
+    } catch (e) {
+      console.warn("[handover] push notifyHandoverDeclined failed:", e);
+    }
+
+    return updated;
   }
 
   static async cancel(requestId: string, fromAnimatorId: string) {
@@ -309,14 +360,33 @@ export class HandoverService {
       throw new AppError("Заявку уже нельзя отменить", 409, "BAD_STATUS");
     }
 
-    return prisma.handoverRequest.update({
+    const updated = await prisma.handoverRequest.update({
       where: { id: requestId },
       data: {
         status: "cancelled",
         resolvedAt: new Date(),
         resolvedBy: fromAnimatorId,
       },
+      include: {
+        order: { select: { title: true } },
+        fromAnimator: { select: { firstName: true, lastName: true } },
+      },
     });
+
+    try {
+      const fromName = `${updated.fromAnimator.firstName} ${updated.fromAnimator.lastName}`.trim();
+      await PushService.notifyHandoverCancelled(
+        updated.toAnimatorId,
+        fromName,
+        updated.order.title,
+        updated.id,
+        updated.orderId,
+      );
+    } catch (e) {
+      console.warn("[handover] push notifyHandoverCancelled failed:", e);
+    }
+
+    return updated;
   }
 
   static async approve(requestId: string, adminId: string) {
@@ -378,7 +448,7 @@ export class HandoverService {
       select: { firstName: true, lastName: true },
     });
 
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1) Аня → removed, handed_over
       await tx.orderAnimator.update({
         where: {
@@ -462,8 +532,28 @@ export class HandoverService {
         },
       });
 
-      return { ok: true, requestId };
+      return {
+        ok: true as const,
+        requestId,
+        fromAnimatorId: req.fromAnimatorId,
+        toAnimatorId: req.toAnimatorId,
+        orderTitle: req.order.title,
+      };
     });
+
+    try {
+      await PushService.notifyHandoverApproved(
+        result.fromAnimatorId,
+        result.toAnimatorId,
+        result.orderTitle,
+        requestId,
+        req.orderId,
+      );
+    } catch (e) {
+      console.warn("[handover] push notifyHandoverApproved failed:", e);
+    }
+
+    return result;
   }
 
   static async reject(
@@ -477,7 +567,7 @@ export class HandoverService {
       throw new AppError("Заявка не ждёт подтверждения админа", 409, "BAD_STATUS");
     }
 
-    return prisma.handoverRequest.update({
+    const updated = await prisma.handoverRequest.update({
       where: { id: requestId },
       data: {
         status: "rejected_by_admin",
@@ -485,7 +575,23 @@ export class HandoverService {
         resolvedBy: adminId,
         rejectComment: input.rejectComment ?? null,
       },
+      include: { order: { select: { title: true } } },
     });
+
+    try {
+      await PushService.notifyHandoverRejected(
+        updated.fromAnimatorId,
+        updated.toAnimatorId,
+        updated.order.title,
+        updated.id,
+        updated.orderId,
+        updated.rejectComment,
+      );
+    } catch (e) {
+      console.warn("[handover] push notifyHandoverRejected failed:", e);
+    }
+
+    return updated;
   }
 
   static async getById(requestId: string) {

@@ -2,6 +2,7 @@ import { createApp } from "./app";
 import { env } from "./config/env";
 import { prisma } from "./db/prisma";
 import { startRemindersJob } from "./jobs/reminders.job";
+import { startHandoverRemindersJob } from "./jobs/handover-reminders.job";
 
 async function main() {
   const app = createApp();
@@ -10,6 +11,7 @@ async function main() {
     console.log(`[server] listening on http://localhost:${env.port}`);
     console.log(`[server] env: ${env.nodeEnv}`);
     startRemindersJob();
+    startHandoverRemindersJob();
   });
 
   const shutdown = async (signal: string) => {

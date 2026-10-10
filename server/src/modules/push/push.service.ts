@@ -118,4 +118,144 @@ export class PushService {
       data: { orderId, type: "assignment_response" },
     });
   }
+
+  // ===== Handover (передача заказа) =====
+
+  static async notifyHandoverIncoming(
+    toAnimatorId: string,
+    fromName: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+  ) {
+    return this.send({
+      userIds: [toAnimatorId],
+      title: "Запрос на передачу заказа",
+      body: `${fromName} передаёт вам: ${orderTitle}`,
+      data: { requestId, orderId, type: "handover_incoming" },
+    });
+  }
+
+  static async notifyHandoverReminder(
+    fromAnimatorId: string,
+    toName: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+  ) {
+    return this.send({
+      userIds: [fromAnimatorId],
+      title: "Напоминание о передаче",
+      body: `${toName} ещё не подтвердил(а) передачу: ${orderTitle}`,
+      data: { requestId, orderId, type: "handover_reminder" },
+    });
+  }
+
+  static async notifyHandoverAccepted(
+    fromAnimatorId: string,
+    toName: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+  ) {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["director", "admin"] }, status: "active" },
+      select: { id: true },
+    });
+    const adminIds = admins.map((u) => u.id);
+
+    await this.send({
+      userIds: [fromAnimatorId],
+      title: "Передача: согласие получено",
+      body: `${toName} согласился(ась). Ждём подтверждения руководителя: ${orderTitle}`,
+      data: { requestId, orderId, type: "handover_accepted_to_from" },
+    });
+
+    if (adminIds.length > 0) {
+      await this.send({
+        userIds: adminIds,
+        title: "Передача ждёт подтверждения",
+        body: `${toName} принял(а) передачу заказа: ${orderTitle}`,
+        data: { requestId, orderId, type: "handover_pending_approval" },
+      });
+    }
+  }
+
+  static async notifyHandoverDeclined(
+    fromAnimatorId: string,
+    toName: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+    comment?: string | null,
+  ) {
+    return this.send({
+      userIds: [fromAnimatorId],
+      title: "Передача отклонена",
+      body: comment
+        ? `${toName} отказался(ась): ${comment}`
+        : `${toName} отказался(ась) принять заказ: ${orderTitle}`,
+      data: { requestId, orderId, type: "handover_declined" },
+    });
+  }
+
+  static async notifyHandoverApproved(
+    fromAnimatorId: string,
+    toAnimatorId: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+  ) {
+    await this.send({
+      userIds: [fromAnimatorId],
+      title: "Передача подтверждена",
+      body: `Заказ передан: ${orderTitle}. Вы больше не назначены.`,
+      data: { requestId, orderId, type: "handover_approved_from" },
+    });
+    return this.send({
+      userIds: [toAnimatorId],
+      title: "Заказ передан вам",
+      body: `Подтвердите новый заказ: ${orderTitle}`,
+      data: { requestId, orderId, type: "handover_approved_to" },
+    });
+  }
+
+  static async notifyHandoverRejected(
+    fromAnimatorId: string,
+    toAnimatorId: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+    comment?: string | null,
+  ) {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["director", "admin"] }, status: "active" },
+      select: { id: true },
+    });
+    const adminIds = admins.map((u) => u.id);
+    const userIds = [fromAnimatorId, toAnimatorId, ...adminIds];
+    return this.send({
+      userIds,
+      title: "Передача отклонена руководителем",
+      body: comment
+        ? `${orderTitle}: ${comment}`
+        : `Передача заказа отклонена: ${orderTitle}`,
+      data: { requestId, orderId, type: "handover_rejected" },
+    });
+  }
+
+  static async notifyHandoverCancelled(
+    toAnimatorId: string,
+    fromName: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+  ) {
+    return this.send({
+      userIds: [toAnimatorId],
+      title: "Заявка отозвана",
+      body: `${fromName} отозвал(а) передачу: ${orderTitle}`,
+      data: { requestId, orderId, type: "handover_cancelled" },
+    });
+  }
 }
