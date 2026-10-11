@@ -46,6 +46,7 @@ export function StaffOrderEditScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteT>();
   const { user } = useAuth();
+  const isDirector = user?.role === "director";
   const { orderId } = route.params;
 
   const [loading, setLoading] = useState(true);
@@ -452,11 +453,17 @@ export function StaffOrderEditScreen() {
           <Text style={styles.section}>Предоплата</Text>
           <Text style={styles.label}>Сумма, ₽</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, !isDirector && styles.inputDisabled]}
             value={prepaymentAmount}
             onChangeText={setPrepaymentAmount}
             keyboardType="numeric"
+            editable={isDirector}
           />
+          {!isDirector ? (
+            <Text style={styles.hintText}>
+              Изменение суммы — только директор
+            </Text>
+          ) : null}
           <TouchableOpacity
             style={styles.checkRow}
             onPress={() => setPrepaymentPaid((v) => !v)}
@@ -596,6 +603,16 @@ const styles = StyleSheet.create({
   radioDotActive: { borderColor: colors.primary, backgroundColor: colors.primary },
   radioText: { fontSize: 14, color: colors.text },
 
+  inputDisabled: {
+    backgroundColor: "#f1f5f9",
+    color: colors.textMuted,
+  },
+  hintText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontStyle: "italic",
+    marginTop: 4,
+  },
   checkRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
   checkbox: {
     width: 22,
