@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Coins, Pencil, KeyRound, Ban, BarChart3 } from "lucide-react";
+import { Coins, Pencil, KeyRound, Ban, BarChart3, Layers } from "lucide-react";
 import type { UserLite, UserStatus } from "../../api/users";
 import {
   useUsers,
@@ -23,6 +23,7 @@ import {
 } from "../../components/ui/table";
 import { AnimatorModal } from "../../components/AnimatorModal";
 import { PasswordResetModal } from "../../components/PasswordResetModal";
+import { AnimatorRatesModal } from "../../components/AnimatorRatesModal";
 
 const STATUS_LABELS: Record<UserStatus, string> = {
   active: "Активен",
@@ -65,6 +66,7 @@ export default function AnimatorsListPage() {
   const [editing, setEditing] = useState<UserLite | null>(null);
 
   const [pwReset, setPwReset] = useState<{ id: string; name: string } | null>(null);
+  const [ratesFor, setRatesFor] = useState<{ id: string; name: string } | null>(null);
 
   const openCreate = () => {
     setEditing(null);
@@ -171,12 +173,26 @@ export default function AnimatorsListPage() {
                             <BarChart3 size={14} />
                           </Button>
                         </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="!px-2"
+                          title="Шаблон и переопределения"
+                          onClick={() =>
+                            setRatesFor({
+                              id: u.id,
+                              name: `${u.lastName} ${u.firstName}`,
+                            })
+                          }
+                        >
+                          <Layers size={14} />
+                        </Button>
                         <Link to={`/animators/rates?animatorId=${u.id}`}>
                           <Button
                             variant="ghost"
                             size="sm"
                             className="!px-2"
-                            title="Ставки"
+                            title="Матрица ставок"
                           >
                             <Coins size={14} />
                           </Button>
@@ -237,6 +253,13 @@ export default function AnimatorsListPage() {
             userId={pwReset?.id ?? ""}
             userName={pwReset?.name ?? ""}
             onClose={() => setPwReset(null)}
+          />
+
+          <AnimatorRatesModal
+            open={!!ratesFor}
+            animatorId={ratesFor?.id ?? ""}
+            animatorName={ratesFor?.name ?? ""}
+            onClose={() => setRatesFor(null)}
           />
         </>
       ) : null}

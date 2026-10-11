@@ -21,6 +21,8 @@ import CatalogLayout from "./pages/catalog/CatalogLayout";
 import GroupsPage from "./pages/catalog/GroupsPage";
 import CharactersPage from "./pages/catalog/CharactersPage";
 import RatesMatrixPage from "./pages/catalog/RatesMatrixPage";
+import RateTemplatesPage from "./pages/animators/RateTemplatesPage";
+import RateTemplateEditPage from "./pages/animators/RateTemplateEditPage";
 import AnimatorReportPage from "./pages/animators/AnimatorReportPage";
 import AnimatorsLayout from "./pages/animators/AnimatorsLayout";
 import AnimatorsListPage from "./pages/animators/AnimatorsListPage";
@@ -65,6 +67,8 @@ export default function App() {
                 }
               >
                 <Route path="rates" element={<RatesMatrixPage />} />
+                <Route path="templates" element={<RateTemplatesPage />} />
+                <Route path="templates/:id" element={<RateTemplateEditPage />} />
                 <Route path=":id/report" element={<AnimatorReportPage />} />
               </Route>
             </Route>
