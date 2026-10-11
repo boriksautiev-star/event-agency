@@ -3,6 +3,7 @@ import { createMaterialTopTabNavigator } from "@react-navigation/material-top-ta
 import { StaffAnimatorsScreen } from "./StaffAnimatorsScreen";
 import { CharactersScreen } from "./CharactersScreen";
 import { RateGroupsScreen } from "./RateGroupsScreen";
+import { RateTemplatesScreen } from "./RateTemplatesScreen";
 import { colors } from "../../theme/colors";
 
 const Tab = createMaterialTopTabNavigator();
@@ -32,6 +33,11 @@ export function StaffAnimatorsTabs() {
         name="Groups"
         component={RateGroupsScreen}
         options={{ title: "Группы" }}
+      />
+      <Tab.Screen
+        name="Templates"
+        component={RateTemplatesScreen}
+        options={{ title: "Шаблоны" }}
       />
     </Tab.Navigator>
   );

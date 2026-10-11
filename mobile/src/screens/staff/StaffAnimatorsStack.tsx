@@ -5,6 +5,8 @@ import { StaffAnimatorFormScreen } from "./StaffAnimatorFormScreen";
 import { CharacterFormScreen } from "./CharacterFormScreen";
 import { RateMatrixScreen } from "./RateMatrixScreen";
 import { AnimatorReportByIdScreen } from "./AnimatorReportByIdScreen";
+import { RateTemplateEditScreen } from "./RateTemplateEditScreen";
+import { AnimatorRatesScreen } from "./AnimatorRatesScreen";
 import { colors } from "../../theme/colors";
 
 export type StaffAnimatorsStackParamList = {
@@ -13,6 +15,8 @@ export type StaffAnimatorsStackParamList = {
   CharacterForm: { characterId?: string };
   RateMatrix: { animatorId: string; animatorName: string };
   AnimatorReport: { animatorId: string; animatorName: string };
+  RateTemplateEdit: { templateId: string; templateName: string };
+  AnimatorRates: { animatorId: string; animatorName: string };
 };
 
 const Stack = createNativeStackNavigator<StaffAnimatorsStackParamList>();
@@ -50,6 +54,16 @@ export function StaffAnimatorsStack() {
         name="AnimatorReport"
         component={AnimatorReportByIdScreen}
         options={{ title: "Отчёт" }}
+      />
+      <Stack.Screen
+        name="RateTemplateEdit"
+        component={RateTemplateEditScreen}
+        options={({ route }) => ({ title: route.params.templateName })}
+      />
+      <Stack.Screen
+        name="AnimatorRates"
+        component={AnimatorRatesScreen}
+        options={{ title: "Ставки аниматора" }}
       />
     </Stack.Navigator>
   );
