@@ -221,7 +221,7 @@ export default function DashboardPage() {
                 {(upcoming.data?.items ?? []).map((o) => (
                   <Link
                     key={o.id}
-                    to={`/orders/${o.id}`}
+                    to={`/orders/${o.id}`} state={{ from: "dashboard" }}
                     className="flex items-start justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition"
                   >
                     <div className="min-w-0 flex-1">
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                 {(noAnimators.data?.items ?? []).slice(0, 5).map((o) => (
                   <Link
                     key={o.id}
-                    to={`/orders/${o.id}`}
+                    to={`/orders/${o.id}`} state={{ from: "dashboard" }}
                     className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition"
                   >
                     <div className="min-w-0 flex-1">
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                   {(noPrepayment.data?.items ?? []).slice(0, 5).map((o) => (
                     <Link
                       key={o.id}
-                      to={`/orders/${o.id}`}
+                      to={`/orders/${o.id}`} state={{ from: "dashboard" }}
                       className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition"
                     >
                       <div className="min-w-0 flex-1">

@@ -93,6 +93,13 @@ export async function fetchMyIncoming(): Promise<HandoverRequest[]> {
   return data.items ?? [];
 }
 
+export async function fetchPendingApproval(): Promise<HandoverRequest[]> {
+  const { data } = await api.get<{ items: HandoverRequest[] }>(
+    "/api/handover/pending-approval",
+  );
+  return data.items ?? [];
+}
+
 export async function fetchHandover(id: string): Promise<HandoverRequest> {
   const { data } = await api.get<HandoverRequest>(`/api/handover/${id}`);
   return data;

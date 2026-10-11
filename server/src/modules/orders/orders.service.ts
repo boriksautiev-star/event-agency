@@ -549,13 +549,7 @@ export class OrdersService {
           "FORBIDDEN",
         );
       }
-      if (data.prepaymentPaid !== undefined) {
-        throw new AppError(
-          "Только директор может отмечать предоплату.",
-          403,
-          "FORBIDDEN",
-        );
-      }
+      // prepaymentPaid разрешён администратору (отметка/снятие)
       if (data.finalPaymentMethod !== undefined) {
         throw new AppError(
           "Только директор может менять метод финальной оплаты.",

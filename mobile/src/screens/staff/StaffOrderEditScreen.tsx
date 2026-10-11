@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../api/client";
 import type { AssignmentStatus, Order, TransportPolicy } from "../../api/types";
 import { colors } from "../../theme/colors";
+import { useAuth } from "../../auth/AuthContext";
 import {
   ASSIGNMENT_STATUS_COLORS,
   ASSIGNMENT_STATUS_LABELS,
@@ -44,6 +45,7 @@ function fmtMoney(v: number): string {
 export function StaffOrderEditScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteT>();
+  const { user } = useAuth();
   const { orderId } = route.params;
 
   const [loading, setLoading] = useState(true);
@@ -238,7 +240,7 @@ export function StaffOrderEditScreen() {
     }
     setBusy(true);
     try {
-      await api.patch(`/api/orders/${orderId}`, {
+      const payload: any = {
         title: title.trim(),
         description: description.trim() || null,
         eventDate,
@@ -248,9 +250,13 @@ export function StaffOrderEditScreen() {
         comment: comment.trim() || null,
         discountPercent: discountValue,
         transportPolicy,
-        prepaymentAmount: prepaymentValue,
         prepaymentPaid,
-      });
+      };
+      // Сумму предоплаты может менять только директор
+      if (user?.role === "director") {
+        payload.prepaymentAmount = prepaymentValue;
+      }
+      await api.patch(`/api/orders/${orderId}`, payload);
 
       Alert.alert("Готово", "Заказ сохранён", [
         { text: "ОК", onPress: () => navigation.goBack() },

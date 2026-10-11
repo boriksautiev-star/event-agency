@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import type { OrderStatus, OrderSlot } from "../api/types";
 import {
@@ -35,6 +35,8 @@ import { formatDate, formatDateTime, formatMoney, formatTimeRange } from "../lib
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromDashboard = (location.state as any)?.from === "dashboard";
   const { user } = useAuth();
   const isDirector = user?.role === "director";
   const { data: order, isLoading, isError, error } = useOrder(id);
@@ -134,9 +136,20 @@ export default function OrderDetailPage() {
           <span className="text-gray-800 font-semibold">{order.title}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate("/orders")}>
-            ← К списку
-          </Button>
+          {fromDashboard ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(-1)}
+              title="Назад в сводку"
+            >
+              ←
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => navigate("/orders")}>
+              ← К списку
+            </Button>
+          )}
           <Button size="sm" onClick={() => setEditOpen(true)}>
             ✎ Редактировать
           </Button>
@@ -256,7 +269,7 @@ export default function OrderDetailPage() {
           <div className="border-t border-gray-100 my-2" />
 
           {/* Управление предоплатой (только директор) */}
-          {isDirector && Number(order.prepaymentAmount) > 0 ? (
+          {(isDirector || user?.role === "admin") && Number(order.prepaymentAmount) > 0 ? (
             <div className="flex items-center gap-2 flex-wrap pt-1">
               {!order.prepaymentPaidAt ? (
                 <Button

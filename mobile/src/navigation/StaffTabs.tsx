@@ -8,6 +8,7 @@ import { FinanceTabs } from "../screens/finance/FinanceTabs";
 import { colors } from "../theme/colors";
 import { useAuth } from "../auth/AuthContext";
 import { ProfileStack } from "../screens/common/ProfileStack";
+import { DashboardStack } from "../screens/dashboard/DashboardStack";
 
 const Tab = createBottomTabNavigator();
 
@@ -27,6 +28,15 @@ export function StaffTabs() {
         tabBarInactiveTintColor: colors.textMuted,
       }}
     >
+      <Tab.Screen
+        name="DashboardTab"
+        component={DashboardStack}
+        options={{
+          title: "Сводка",
+          tabBarLabel: "Сводка",
+          tabBarIcon: ({ focused }) => <TabIcon label="📊" focused={focused} />,
+        }}
+      />
       <Tab.Screen
         name="OrdersTab"
         component={StaffOrdersStack}
