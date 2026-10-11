@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Trash2, Copy } from "lucide-react";
+import { Pencil, Trash2, Copy, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -192,6 +192,16 @@ export default function RateTemplatesPage() {
                         onClick={() => openCopy(t)}
                       >
                         <Copy size={14} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="!px-2"
+                        title={t.isActive ? "В архив" : "Активировать"}
+                        onClick={() => handleToggleActive(t)}
+                        disabled={busy}
+                      >
+                        {t.isActive ? <Archive size={14} /> : <ArchiveRestore size={14} />}
                       </Button>
                       <Button
                         variant="ghost"

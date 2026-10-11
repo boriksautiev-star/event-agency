@@ -36,12 +36,16 @@ export function RateTemplatesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Модалка создания/переименования
+  // Модалка создания / переименования / копии
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<RateTemplateListItem | null>(null);
+  const [copyFromId, setCopyFromId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Bottom-sheet с действиями
+  const [actionsFor, setActionsFor] = useState<RateTemplateListItem | null>(null);
 
   const [kbVisible, setKbVisible] = useState(false);
   React.useEffect(() => {
@@ -73,14 +77,26 @@ export function RateTemplatesScreen() {
 
   const openCreate = () => {
     setEditing(null);
+    setCopyFromId(null);
     setName("");
     setNotes("");
     setModalVisible(true);
   };
 
   const openRename = (t: RateTemplateListItem) => {
+    setActionsFor(null);
     setEditing(t);
+    setCopyFromId(null);
     setName(t.name);
+    setNotes(t.notes ?? "");
+    setModalVisible(true);
+  };
+
+  const openCopy = (t: RateTemplateListItem) => {
+    setActionsFor(null);
+    setEditing(null);
+    setCopyFromId(t.id);
+    setName(`${t.name} (копия)`);
     setNotes(t.notes ?? "");
     setModalVisible(true);
   };
@@ -102,6 +118,7 @@ export function RateTemplatesScreen() {
         await createTemplate({
           name: trimmed,
           notes: notes.trim() || null,
+          copyFromTemplateId: copyFromId,
         });
       }
       setModalVisible(false);
@@ -113,71 +130,8 @@ export function RateTemplatesScreen() {
     }
   };
 
-  const openActions = (t: RateTemplateListItem) => {
-    Alert.alert(
-      t.name,
-      undefined,
-      [
-        {
-          text: "✎ Редактировать ставки",
-          onPress: () =>
-            navigation.navigate("RateTemplateEdit", {
-              templateId: t.id,
-              templateName: t.name,
-            }),
-        },
-        { text: "📋 Дублировать", onPress: () => duplicate(t) },
-        { text: "✎ Переименовать", onPress: () => openRename(t) },
-        {
-          text: t.isActive ? "📦 В архив" : "✅ Активировать",
-          onPress: () => toggleActive(t),
-        },
-        {
-          text: "🗑 Удалить",
-          style: "destructive",
-          onPress: () => remove(t),
-        },
-        { text: "Отмена", style: "cancel" },
-      ],
-    );
-  };
-
-  const duplicate = (t: RateTemplateListItem) => {
-    Alert.prompt
-      ? Alert.prompt(
-          "Копия шаблона",
-          "Название для новой копии",
-          [
-            { text: "Отмена", style: "cancel" },
-            {
-              text: "Создать",
-              onPress: async (newName?: string) => {
-                const trimmed = (newName ?? "").trim();
-                if (trimmed.length < 2) {
-                  Alert.alert("Проверьте", "Название минимум 2 символа");
-                  return;
-                }
-                try {
-                  await createTemplate({
-                    name: trimmed,
-                    notes: t.notes,
-                    copyFromTemplateId: t.id,
-                  });
-                  load();
-                } catch (e: any) {
-                  Alert.alert("Ошибка", e?.response?.data?.error ?? "Не удалось");
-                }
-              },
-            },
-          ],
-          "plain-text",
-          `${t.name} (копия)`,
-        )
-      : // Android fallback: просто переходим к переименованию
-        openRename(t);
-  };
-
   const toggleActive = async (t: RateTemplateListItem) => {
+    setActionsFor(null);
     try {
       await updateTemplate(t.id, { isActive: !t.isActive });
       load();
@@ -187,6 +141,7 @@ export function RateTemplatesScreen() {
   };
 
   const remove = (t: RateTemplateListItem) => {
+    setActionsFor(null);
     if (t.animatorsCount > 0) {
       Alert.alert(
         "Нельзя удалить",
@@ -252,7 +207,7 @@ export function RateTemplatesScreen() {
                 templateName: item.name,
               })
             }
-            onLongPress={() => openActions(item)}
+            onLongPress={() => setActionsFor(item)}
           >
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{item.name}</Text>
@@ -271,7 +226,7 @@ export function RateTemplatesScreen() {
               </View>
             ) : null}
             <TouchableOpacity
-              onPress={() => openActions(item)}
+              onPress={() => setActionsFor(item)}
               style={styles.moreBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -285,6 +240,89 @@ export function RateTemplatesScreen() {
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
 
+      {/* ==== Bottom-sheet: действия с шаблоном ==== */}
+      <Modal
+        visible={!!actionsFor}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setActionsFor(null)}
+      >
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={() => setActionsFor(null)}
+        >
+          <View
+            style={[styles.actionsSheet, { paddingBottom: insets.bottom + 16 }]}
+          >
+            <View style={styles.actionsHeader}>
+              <Text style={styles.actionsTitle} numberOfLines={2}>
+                {actionsFor?.name}
+              </Text>
+              <TouchableOpacity onPress={() => setActionsFor(null)}>
+                <Text style={styles.close}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => {
+                const t = actionsFor;
+                setActionsFor(null);
+                if (t) navigation.navigate("RateTemplateEdit", {
+                  templateId: t.id,
+                  templateName: t.name,
+                });
+              }}
+            >
+              <Text style={styles.actionBtnText}>✎ Редактировать ставки</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => actionsFor && openCopy(actionsFor)}
+            >
+              <Text style={styles.actionBtnText}>📋 Дублировать</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => actionsFor && openRename(actionsFor)}
+            >
+              <Text style={styles.actionBtnText}>✎ Переименовать</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => actionsFor && toggleActive(actionsFor)}
+            >
+              <Text style={styles.actionBtnText}>
+                {actionsFor?.isActive ? "📦 Перенести в архив" : "✅ Активировать"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionBtnDanger]}
+              onPress={() => actionsFor && remove(actionsFor)}
+            >
+              <Text style={[styles.actionBtnText, { color: colors.danger }]}>
+                🗑 Удалить
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionBtnCancel]}
+              onPress={() => setActionsFor(null)}
+            >
+              <Text style={[styles.actionBtnText, { color: colors.textMuted }]}>
+                Отмена
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ==== Модалка создания / переименования / копии ==== */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -300,7 +338,11 @@ export function RateTemplatesScreen() {
           >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editing ? "Переименовать шаблон" : "Новый шаблон"}
+                {editing
+                  ? "Переименовать шаблон"
+                  : copyFromId
+                    ? "Копия шаблона"
+                    : "Новый шаблон"}
               </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Text style={styles.close}>✕</Text>
@@ -381,6 +423,38 @@ const styles = StyleSheet.create({
   },
   fabText: { color: "#fff", fontSize: 28, lineHeight: 30, fontWeight: "300" },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+
+  // Bottom-sheet actions
+  actionsSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  actionsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  actionsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+    flex: 1,
+    marginRight: 8,
+  },
+  actionBtn: {
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  actionBtnDanger: {},
+  actionBtnCancel: { marginTop: 8, borderTopWidth: 0 },
+  actionBtnText: { fontSize: 15, color: colors.text, fontWeight: "600" },
+
+  // Modal создание/переименование
   modalContent: {
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
