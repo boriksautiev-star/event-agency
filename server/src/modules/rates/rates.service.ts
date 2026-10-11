@@ -14,22 +14,63 @@ export class RatesService {
     });
     if (!character) throw new AppError("Персонаж не найден", 404, "CHARACTER_NOT_FOUND");
 
-    const rate = await prisma.rate.findUnique({
+    // 1. Override по (animator, character, duration)?
+    const override = await prisma.animatorRateOverride.findUnique({
       where: {
-        animatorId_rateGroupId_durationMin: {
+        animatorId_characterId_durationMin: {
           animatorId,
-          rateGroupId: character.rateGroupId,
+          characterId,
           durationMin,
         },
       },
     });
 
+    if (override) {
+      return {
+        characterId,
+        rateGroupId: character.rateGroupId,
+        durationMin,
+        amount: Number(override.amount),
+        found: true,
+        source: "override" as const,
+      };
+    }
+
+    // 2. Шаблон аниматора по (rateGroup, duration)?
+    const animator = await prisma.user.findUnique({
+      where: { id: animatorId },
+      select: { rateTemplateId: true },
+    });
+
+    if (animator?.rateTemplateId) {
+      const tplRate = await prisma.rateTemplateRate.findUnique({
+        where: {
+          templateId_rateGroupId_durationMin: {
+            templateId: animator.rateTemplateId,
+            rateGroupId: character.rateGroupId,
+            durationMin,
+          },
+        },
+      });
+      if (tplRate) {
+        return {
+          characterId,
+          rateGroupId: character.rateGroupId,
+          durationMin,
+          amount: Number(tplRate.amount),
+          found: true,
+          source: "template" as const,
+        };
+      }
+    }
+
     return {
       characterId,
       rateGroupId: character.rateGroupId,
       durationMin,
-      amount: rate ? Number(rate.amount) : null,
-      found: !!rate,
+      amount: null,
+      found: false,
+      source: null,
     };
   }
 
@@ -83,57 +124,95 @@ export class RatesService {
     let affectedAssignments = 0;
 
     await prisma.$transaction(async (tx) => {
+      // Найдём или создадим персональный шаблон аниматора
+      let templateId = animator.rateTemplateId;
+      if (!templateId) {
+        let name = `Персональные ставки ${animator.firstName} ${animator.lastName}`;
+        const clash = await tx.rateTemplate.findUnique({ where: { name } });
+        if (clash) name = `${name} (${animator.id.slice(0, 4)})`;
+        const tpl = await tx.rateTemplate.create({
+          data: { name, notes: "Персональный шаблон (авто)" },
+        });
+        templateId = tpl.id;
+        await tx.user.update({
+          where: { id: animator.id },
+          data: { rateTemplateId: templateId },
+        });
+      }
+
       for (const cell of input.cells) {
         if (cell.amount === null) {
-          // Удаляем ячейку, если есть
-          await tx.rate.deleteMany({
+          await tx.rateTemplateRate.deleteMany({
             where: {
-              animatorId: input.animatorId,
+              templateId,
               rateGroupId: cell.rateGroupId,
               durationMin: cell.durationMin,
             },
           });
         } else {
-          // Upsert
-          await tx.rate.upsert({
+          await tx.rateTemplateRate.upsert({
             where: {
-              animatorId_rateGroupId_durationMin: {
-                animatorId: input.animatorId,
+              templateId_rateGroupId_durationMin: {
+                templateId,
                 rateGroupId: cell.rateGroupId,
                 durationMin: cell.durationMin,
               },
             },
             create: {
-              animatorId: input.animatorId,
+              templateId,
               rateGroupId: cell.rateGroupId,
               durationMin: cell.durationMin,
               amount: cell.amount,
             },
             update: { amount: cell.amount },
           });
+        }
 
-          // Автопересчёт будущих назначений
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
+        // Пересчёт будущих назначений этого аниматора на этот слот (группа+duration)
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
 
-          const result = await tx.orderAnimator.updateMany({
+        const assignments = await tx.orderAnimator.findMany({
+          where: {
+            animatorId: input.animatorId,
+            payoutSource: "rate_matrix",
+            payoutPaidAt: null,
+            slot: {
+              rateDurationMinutes: cell.durationMin,
+              character: { rateGroupId: cell.rateGroupId },
+            },
+            order: {
+              eventDate: { gte: todayStart },
+              status: { notIn: ["completed", "cancelled"] },
+            },
+          },
+          include: { slot: { include: { character: { select: { id: true } } } } },
+        });
+
+        for (const a of assignments) {
+          const characterId = a.slot?.character?.id;
+          if (!characterId) continue;
+
+          // Override приоритетнее
+          const override = await tx.animatorRateOverride.findUnique({
             where: {
-              animatorId: input.animatorId,
-              payoutSource: "rate_matrix",
-              payoutPaidAt: null,
-              slot: {
-                rateDurationMinutes: cell.durationMin,
-                character: { rateGroupId: cell.rateGroupId },
-              },
-              order: {
-                eventDate: { gte: todayStart },
-                status: { notIn: ["completed", "cancelled"] },
+              animatorId_characterId_durationMin: {
+                animatorId: input.animatorId,
+                characterId,
+                durationMin: cell.durationMin,
               },
             },
-            data: { payout: cell.amount },
           });
 
-          affectedAssignments += result.count;
+          const newPayout = override ? Number(override.amount) : cell.amount;
+          if (newPayout === null) continue;
+          if (Number(a.payout) === newPayout) continue;
+
+          await tx.orderAnimator.update({
+            where: { id: a.id },
+            data: { payout: newPayout },
+          });
+          affectedAssignments++;
         }
       }
     });

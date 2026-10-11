@@ -42,6 +42,10 @@ model User {
   handoversFrom      HandoverRequest[]   @relation("HandoverFrom")
   handoversTo        HandoverRequest[]   @relation("HandoverTo")
 
+  rateTemplateId     String?                @map("rate_template_id")
+  rateTemplate       RateTemplate?          @relation("TemplateAnimators", fields: [rateTemplateId], references: [id], onDelete: SetNull)
+  rateOverrides      AnimatorRateOverride[] @relation("AnimatorOverrides")
+
   @@map("users")
 }
 
@@ -124,6 +128,8 @@ model RateGroup {
   characters Character[]
   rates      Rate[]
 
+  templateRates RateTemplateRate[] @relation("GroupTemplateRates")
+
   @@map("rate_groups")
 }
 
@@ -142,6 +148,8 @@ model Character {
 
   @@index([rateGroupId])
   @@index([name])
+  rateOverrides AnimatorRateOverride[] @relation("CharacterOverrides")
+
   @@map("characters")
 }
 
@@ -159,6 +167,54 @@ model CharacterPriceOption {
   @@unique([characterId, durationMin])
   @@index([characterId])
   @@map("character_price_options")
+}
+
+model RateTemplate {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  notes     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rates     RateTemplateRate[] @relation("TemplateRates")
+  animators User[]             @relation("TemplateAnimators")
+
+  @@map("rate_templates")
+}
+
+model RateTemplateRate {
+  id          String   @id @default(uuid())
+  templateId  String   @map("template_id")
+  rateGroupId String   @map("rate_group_id")
+  durationMin Int      @map("duration_min")
+  amount      Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  template  RateTemplate @relation("TemplateRates", fields: [templateId], references: [id], onDelete: Cascade)
+  rateGroup RateGroup    @relation("GroupTemplateRates", fields: [rateGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, rateGroupId, durationMin])
+  @@index([rateGroupId, durationMin])
+  @@map("rate_template_rates")
+}
+
+model AnimatorRateOverride {
+  id          String   @id @default(uuid())
+  animatorId  String   @map("animator_id")
+  characterId String   @map("character_id")
+  durationMin Int      @map("duration_min")
+  amount      Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  animator  User      @relation("AnimatorOverrides", fields: [animatorId], references: [id], onDelete: Cascade)
+  character Character @relation("CharacterOverrides", fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([animatorId, characterId, durationMin])
+  @@index([animatorId])
+  @@map("animator_rate_overrides")
 }
 
 model Rate {
