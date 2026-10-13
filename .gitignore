@@ -72,4 +72,15 @@ patch-*.js
 .metro-health-check*
 # === One-off scaffold scripts ===
 scaffold-*.js
-add-*-scripts.js
+add-*-scripts.js
+
+# === One-off PowerShell scripts (dev sessions) ===
+/*.ps1
+setup-*.ps1
+test-*.ps1
+diag*.ps1
+*-handover.ps1
+create-*.ps1
+approve-*.ps1
+accept-*.ps1
+reject-*.ps1
