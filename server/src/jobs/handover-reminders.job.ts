@@ -18,11 +18,11 @@ async function sendHandoverReminders() {
 
   let sent = 0;
   for (const r of pending) {
-    const toName = `${r.toAnimator.firstName} ${r.toAnimator.lastName}`.trim();
+    const fromName = `${r.fromAnimator.firstName} ${r.fromAnimator.lastName}`.trim();
     try {
       await PushService.notifyHandoverReminder(
-        r.fromAnimatorId,
-        toName,
+        r.toAnimatorId,
+        fromName,
         r.order.title,
         r.id,
         r.orderId,

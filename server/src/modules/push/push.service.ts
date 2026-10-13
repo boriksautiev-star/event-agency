@@ -137,16 +137,16 @@ export class PushService {
   }
 
   static async notifyHandoverReminder(
-    fromAnimatorId: string,
-    toName: string,
+    recipientId: string,
+    fromName: string,
     orderTitle: string,
     requestId: string,
     orderId: string,
   ) {
     return this.send({
-      userIds: [fromAnimatorId],
+      userIds: [recipientId],
       title: "Напоминание о передаче",
-      body: `${toName} ещё не подтвердил(а) передачу: ${orderTitle}`,
+      body: `${fromName} ждёт вашего ответа: ${orderTitle}`,
       data: { requestId, orderId, type: "handover_reminder" },
     });
   }
