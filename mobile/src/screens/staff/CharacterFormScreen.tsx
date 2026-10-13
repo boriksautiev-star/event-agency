@@ -11,7 +11,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  Modal,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RATE_DURATIONS, formatDuration } from "@event-agency/shared";
@@ -29,6 +31,7 @@ type PriceRow = {
 };
 
 export function CharacterFormScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteT>();
   const characterId = route.params?.characterId;
@@ -43,6 +46,8 @@ export function CharacterFormScreen() {
   const [notes, setNotes] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [prices, setPrices] = useState<PriceRow[]>([]);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [customDuration, setCustomDuration] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -89,15 +94,29 @@ export function CharacterFormScreen() {
     return RATE_DURATIONS.filter((d) => !used.has(d));
   }, [prices]);
 
-  const addPrice = () => {
-    if (availableDurations.length === 0) {
-      Alert.alert("Все длительности уже заданы");
+  const addDuration = (d: number) => {
+    if (prices.some((p) => p.durationMin === d)) {
+      Alert.alert("Уже добавлено");
       return;
     }
-    setPrices((prev) => [
-      ...prev,
-      { durationMin: availableDurations[0], price: "" },
-    ]);
+    setPrices((prev) => [...prev, { durationMin: d, price: "" }]);
+    setPickerVisible(false);
+    setCustomDuration("");
+  };
+
+  const addCustomDuration = () => {
+    const n = Number(customDuration.replace(",", "."));
+    if (!Number.isInteger(n) || n < 1 || n > 1440) {
+      Alert.alert("Проверьте", "Длительность — целое число от 1 до 1440 минут");
+      return;
+    }
+    if (prices.some((p) => p.durationMin === n)) {
+      Alert.alert("Уже добавлено");
+      return;
+    }
+    setPrices((prev) => [...prev, { durationMin: n, price: "" }]);
+    setPickerVisible(false);
+    setCustomDuration("");
   };
 
   const updatePriceRow = (index: number, patch: Partial<PriceRow>) => {
@@ -248,9 +267,14 @@ export function CharacterFormScreen() {
                 const idx = prices.findIndex((x) => x === p);
                 return (
                   <View key={p.durationMin} style={styles.priceRow}>
-                    <Text style={styles.priceDuration}>
-                      {formatDuration(p.durationMin)}
-                    </Text>
+                    <View style={{ width: 90 }}>
+                      <Text style={styles.priceDuration}>
+                        {formatDuration(p.durationMin)}
+                      </Text>
+                      {!(RATE_DURATIONS as readonly number[]).includes(p.durationMin) ? (
+                        <Text style={styles.customBadge}>своя</Text>
+                      ) : null}
+                    </View>
                     <TextInput
                       style={[styles.input, styles.priceInput]}
                       value={p.price}
@@ -271,9 +295,11 @@ export function CharacterFormScreen() {
           )}
 
           <TouchableOpacity
-            style={[styles.addPriceBtn, availableDurations.length === 0 && { opacity: 0.5 }]}
-            onPress={addPrice}
-            disabled={availableDurations.length === 0}
+            style={styles.addPriceBtn}
+            onPress={() => {
+              setCustomDuration("");
+              setPickerVisible(true);
+            }}
           >
             <Text style={styles.addPriceText}>+ Добавить длительность</Text>
           </TouchableOpacity>
@@ -304,6 +330,71 @@ export function CharacterFormScreen() {
           </TouchableOpacity>
         ) : null}
       </ScrollView>
+
+      {/* ===== Picker длительностей ===== */}
+      <Modal
+        visible={pickerVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.overlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            activeOpacity={1}
+            onPress={() => setPickerVisible(false)}
+          />
+          <View style={[styles.pickerSheet, { paddingBottom: insets.bottom + 16 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Добавить длительность</Text>
+              <TouchableOpacity onPress={() => setPickerVisible(false)}>
+                <Text style={styles.close}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.pickerSection}>Стандартные</Text>
+            {availableDurations.length === 0 ? (
+              <Text style={styles.hint}>Все стандартные длительности уже добавлены</Text>
+            ) : (
+              <View style={styles.chips}>
+                {availableDurations.map((d) => (
+                  <TouchableOpacity
+                    key={d}
+                    style={styles.durationChip}
+                    onPress={() => addDuration(d)}
+                  >
+                    <Text style={styles.durationChipText}>{formatDuration(d)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <Text style={[styles.pickerSection, { marginTop: 20 }]}>Своя</Text>
+            <Text style={styles.hint}>
+              Введите длительность в минутах (от 1 до 1440)
+            </Text>
+            <View style={styles.customRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                value={customDuration}
+                onChangeText={setCustomDuration}
+                keyboardType="numeric"
+                placeholder="Например: 35"
+              />
+              <Text style={styles.rub}>мин</Text>
+              <TouchableOpacity
+                style={styles.customAddBtn}
+                onPress={addCustomDuration}
+              >
+                <Text style={styles.customAddBtnText}>Добавить</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -347,7 +438,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 10,
   },
-  priceDuration: { fontSize: 14, fontWeight: "600", color: colors.text, width: 80 },
+  priceDuration: { fontSize: 14, fontWeight: "600", color: colors.text },
+  customBadge: {
+    fontSize: 10,
+    color: colors.warning,
+    fontWeight: "700",
+    marginTop: 2,
+  },
   priceInput: { flex: 1 },
   rub: { fontSize: 15, color: colors.textMuted },
   removeBtn: { padding: 6 },
@@ -379,4 +476,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryBtnText: { color: colors.primary, fontWeight: "600", fontSize: 14 },
+
+  // Picker модалка
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  pickerSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: colors.text },
+  close: { fontSize: 20, color: colors.textMuted, padding: 4 },
+  pickerSection: {
+    fontSize: 12,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  durationChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  durationChipText: { fontSize: 14, color: colors.text, fontWeight: "600" },
+  customRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  customAddBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  customAddBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });
