@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RATE_DURATIONS, formatDuration } from "@event-agency/shared";
+import { getEffectiveDurations, formatDuration } from "@event-agency/shared";
 import {
   Dialog,
   DialogContent,
@@ -89,6 +89,15 @@ export function AnimatorRatesModal({ open, animatorId, animatorName, onClose }: 
     }
     return map;
   }, [chars]);
+
+  const columns = useMemo(
+    () =>
+      getEffectiveDurations(
+        chars,
+        (overridesResp?.cells ?? []).map((c) => c.durationMin),
+      ),
+    [chars, overridesResp],
+  );
 
   // initial overrides (что на сервере)
   const initialOverrides = useMemo(() => {
@@ -223,7 +232,7 @@ export function AnimatorRatesModal({ open, animatorId, animatorName, onClose }: 
                       <th className="text-left px-2 py-1.5 font-semibold text-gray-600 min-w-[180px] sticky left-0 bg-gray-50 z-10">
                         Персонаж
                       </th>
-                      {RATE_DURATIONS.map((d) => (
+                      {columns.map((d) => (
                         <th key={d} className="px-1 py-1.5 font-semibold text-gray-600 text-center w-[90px] whitespace-nowrap">
                           {formatDuration(d)}
                         </th>
@@ -238,7 +247,7 @@ export function AnimatorRatesModal({ open, animatorId, animatorName, onClose }: 
                         <>
                           <tr key={`g-${g.id}`} className="bg-gray-50/50">
                             <td
-                              colSpan={RATE_DURATIONS.length + 1}
+                              colSpan={columns.length + 1}
                               className="px-2 py-1 text-[10px] uppercase tracking-wide text-gray-500 font-bold sticky left-0"
                             >
                               {g.name}
@@ -251,7 +260,7 @@ export function AnimatorRatesModal({ open, animatorId, animatorName, onClose }: 
                                   {c.name}
                                 </div>
                               </td>
-                              {RATE_DURATIONS.map((d) => {
+                              {columns.map((d) => {
                                 const k = cellKey(c.id, d);
                                 const v = ovDraft[k] ?? "";
                                 const base = tplCellsMap[tplKey(g.id, d)];

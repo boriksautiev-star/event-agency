@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { RATE_DURATIONS, formatDuration } from "@event-agency/shared";
+import { getEffectiveDurations, formatDuration } from "@event-agency/shared";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import { useRateGroups } from "../../hooks/useRateGroups";
+import { useCharacters } from "../../hooks/useCharacters";
 import {
   useRateTemplate,
   useSaveTemplateRates,
@@ -21,12 +22,22 @@ export default function RateTemplateEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: groups = [] } = useRateGroups(true);
+  const { data: allCharacters = [] } = useCharacters();
   const { data: tpl, isLoading, isError, error } = useRateTemplate(id);
   const saveMut = useSaveTemplateRates();
 
   const activeGroups = useMemo(
     () => groups.filter((g) => g.isActive).sort((a, b) => a.sortOrder - b.sortOrder),
     [groups],
+  );
+
+  const columns = useMemo(
+    () =>
+      getEffectiveDurations(
+        allCharacters,
+        (tpl?.cells ?? []).map((c) => c.durationMin),
+      ),
+    [allCharacters, tpl],
   );
 
   // initial: server state
@@ -56,7 +67,7 @@ export default function RateTemplateEditPage() {
 
   const hasChanges = useMemo(() => {
     for (const g of activeGroups) {
-      for (const dur of RATE_DURATIONS) {
+      for (const dur of columns) {
         const k = cellKey(g.id, dur);
         const before = initial[k];
         const afterRaw = draft[k] ?? "";
@@ -65,14 +76,14 @@ export default function RateTemplateEditPage() {
       }
     }
     return false;
-  }, [activeGroups, initial, draft]);
+  }, [activeGroups, columns, initial, draft]);
 
   const onSave = async () => {
     if (!id || !hasChanges) return;
 
     const cells: SaveTemplateCell[] = [];
     for (const g of activeGroups) {
-      for (const dur of RATE_DURATIONS) {
+      for (const dur of columns) {
         const k = cellKey(g.id, dur);
         const before = initial[k];
         const raw = draft[k] ?? "";
@@ -164,7 +175,7 @@ export default function RateTemplateEditPage() {
                   <th className="text-left px-4 py-2 font-semibold text-gray-600 min-w-[220px] sticky left-0 bg-gray-50 z-10">
                     Группа
                   </th>
-                  {RATE_DURATIONS.map((dur) => (
+                  {columns.map((dur) => (
                     <th
                       key={dur}
                       className="px-2 py-2 font-semibold text-gray-600 text-center w-[110px] whitespace-nowrap"
@@ -182,7 +193,7 @@ export default function RateTemplateEditPage() {
                         {g.name}
                       </div>
                     </td>
-                    {RATE_DURATIONS.map((dur) => {
+                    {columns.map((dur) => {
                       const k = cellKey(g.id, dur);
                       const v = draft[k] ?? "";
                       return (

@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { RATE_DURATIONS, formatDuration } from "@event-agency/shared";
+import { getEffectiveDurations, formatDuration } from "@event-agency/shared";
 import { api } from "../../api/client";
 import { colors } from "../../theme/colors";
 import type { RateGroup, Character } from "../../api/types";
@@ -199,6 +199,15 @@ export function AnimatorRatesScreen() {
     return characters.filter((c) => c.rateGroupId === activeGroupId);
   }, [characters, activeGroupId]);
 
+  const columns = useMemo(
+    () =>
+      getEffectiveDurations(
+        characters,
+        Object.keys(initialOv).map((k) => Number(k.split("|")[1])),
+      ),
+    [characters, initialOv],
+  );
+
   const currentTemplateName = useMemo(() => {
     if (!initialTemplateId) return "Без шаблона";
     const t = templates.find((x) => x.id === initialTemplateId);
@@ -303,7 +312,7 @@ export function AnimatorRatesScreen() {
                 charsOfActiveGroup.map((c) => (
                   <View key={c.id} style={styles.charBlock}>
                     <Text style={styles.charName}>{c.name}</Text>
-                    {RATE_DURATIONS.map((d) => {
+                    {columns.map((d) => {
                       const k = ovKey(c.id, d);
                       const base = tplCellsMap[tplKey(activeGroupId, d)];
                       return (

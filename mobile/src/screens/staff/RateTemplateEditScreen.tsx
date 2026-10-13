@@ -12,7 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { RATE_DURATIONS, formatDuration } from "@event-agency/shared";
+import { getEffectiveDurations, formatDuration } from "@event-agency/shared";
 import { api } from "../../api/client";
 import { colors } from "../../theme/colors";
 import {
@@ -21,7 +21,7 @@ import {
   SaveTemplateCell,
   RateTemplateDetail,
 } from "../../api/rate-templates";
-import type { RateGroup } from "../../api/types";
+import type { RateGroup, Character } from "../../api/types";
 import type { StaffAnimatorsStackParamList } from "./StaffAnimatorsStack";
 
 type RouteT = RouteProp<StaffAnimatorsStackParamList, "RateTemplateEdit">;
@@ -38,14 +38,16 @@ export function RateTemplateEditScreen() {
   const [busy, setBusy] = useState(false);
   const [tpl, setTpl] = useState<RateTemplateDetail | null>(null);
   const [groups, setGroups] = useState<RateGroup[]>([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [initial, setInitial] = useState<Record<string, number>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     try {
-      const [tplData, groupsRes] = await Promise.all([
+      const [tplData, groupsRes, charsRes] = await Promise.all([
         fetchTemplateById(templateId),
         api.get<{ items: RateGroup[] }>("/api/rate-groups?includeInactive=false"),
+        api.get<{ items: Character[] } | Character[]>("/api/characters?activeOnly=true"),
       ]);
       setTpl(tplData);
       setGroups(
@@ -53,6 +55,8 @@ export function RateTemplateEditScreen() {
           .filter((g) => g.isActive)
           .sort((a, b) => a.sortOrder - b.sortOrder),
       );
+      const chars = Array.isArray(charsRes.data) ? charsRes.data : charsRes.data.items;
+      setCharacters(chars);
       const ini: Record<string, number> = {};
       for (const c of tplData.cells) {
         ini[cellKey(c.rateGroupId, c.durationMin)] = c.amount;
@@ -72,9 +76,18 @@ export function RateTemplateEditScreen() {
     load();
   }, [load]);
 
+  const columns = useMemo(
+    () =>
+      getEffectiveDurations(
+        characters,
+        (tpl?.cells ?? []).map((c) => c.durationMin),
+      ),
+    [characters, tpl],
+  );
+
   const hasChanges = useMemo(() => {
     for (const g of groups) {
-      for (const d of RATE_DURATIONS) {
+      for (const d of columns) {
         const k = cellKey(g.id, d);
         const before = initial[k];
         const raw = draft[k] ?? "";
@@ -83,13 +96,13 @@ export function RateTemplateEditScreen() {
       }
     }
     return false;
-  }, [groups, initial, draft]);
+  }, [groups, columns, initial, draft]);
 
   const onSave = async () => {
     if (!hasChanges) return;
     const cells: SaveTemplateCell[] = [];
     for (const g of groups) {
-      for (const d of RATE_DURATIONS) {
+      for (const d of columns) {
         const k = cellKey(g.id, d);
         const before = initial[k];
         const raw = draft[k] ?? "";
@@ -170,7 +183,7 @@ export function RateTemplateEditScreen() {
           groups.map((g) => (
             <View key={g.id} style={styles.card}>
               <Text style={styles.groupTitle}>{g.name}</Text>
-              {RATE_DURATIONS.map((d) => {
+              {columns.map((d) => {
                 const k = cellKey(g.id, d);
                 return (
                   <View key={d} style={styles.row}>
