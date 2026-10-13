@@ -148,21 +148,3 @@ export type Character = {
   priceOptions?: CharacterPriceOption[];
 };
 
-export type RateCell = {
-  rateGroupId: string;
-  durationMin: number;
-  amount: number;
-};
-
-export type RateMatrix = {
-  animatorId: string;
-  cells: RateCell[];
-};
-
-export type RateLookupResult = {
-  characterId: string;
-  rateGroupId: string;
-  durationMin: number;
-  amount: number | null;
-  found: boolean;
-};

@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StaffAnimatorsTabs } from "./StaffAnimatorsTabs";
 import { StaffAnimatorFormScreen } from "./StaffAnimatorFormScreen";
 import { CharacterFormScreen } from "./CharacterFormScreen";
-import { RateMatrixScreen } from "./RateMatrixScreen";
 import { AnimatorReportByIdScreen } from "./AnimatorReportByIdScreen";
 import { RateTemplateEditScreen } from "./RateTemplateEditScreen";
 import { AnimatorRatesScreen } from "./AnimatorRatesScreen";
@@ -13,7 +12,6 @@ export type StaffAnimatorsStackParamList = {
   AnimatorsTabs: undefined;
   AnimatorForm: { animatorId?: string };
   CharacterForm: { characterId?: string };
-  RateMatrix: { animatorId: string; animatorName: string };
   AnimatorReport: { animatorId: string; animatorName: string };
   RateTemplateEdit: { templateId: string; templateName: string };
   AnimatorRates: { animatorId: string; animatorName: string };
@@ -44,11 +42,6 @@ export function StaffAnimatorsStack() {
         name="CharacterForm"
         component={CharacterFormScreen}
         options={{ title: "Персонаж" }}
-      />
-      <Stack.Screen
-        name="RateMatrix"
-        component={RateMatrixScreen}
-        options={{ title: "Ставки" }}
       />
       <Stack.Screen
         name="AnimatorReport"

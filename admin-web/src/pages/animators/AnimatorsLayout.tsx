@@ -7,7 +7,6 @@ type Tab = { to: string; label: string; directorOnly?: boolean };
 const TABS: Tab[] = [
   { to: "/animators/list", label: "Аниматоры" },
   { to: "/animators/templates", label: "Шаблоны ставок", directorOnly: true },
-  { to: "/animators/rates", label: "Матрица ставок", directorOnly: true },
 ];
 
 export default function AnimatorsLayout() {

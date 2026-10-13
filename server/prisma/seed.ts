@@ -36,7 +36,9 @@ async function main() {
   await prisma.expenseCategory.deleteMany({});
   await prisma.characterPriceOption.deleteMany({});
   await prisma.character.deleteMany({});
-  await prisma.rate.deleteMany({});
+  await prisma.rateTemplateRate.deleteMany({});
+  await prisma.rateTemplate.deleteMany({});
+  await prisma.animatorRateOverride.deleteMany({});
   await prisma.rateGroup.deleteMany({});
   await prisma.client.deleteMany({});
   await prisma.refreshToken.deleteMany({});
@@ -232,93 +234,70 @@ async function main() {
 
   console.log(`   ✓ ${charactersData.length} персонажей с ценами`);
 
-  console.log("🌱 Seed: создаём матрицу ставок (аниматор × группа × длительность)…");
+  console.log("🌱 Seed: создаём шаблоны ставок…");
 
-  const matrix: Array<{
+  type MatrixRow = {
     animatorId: string;
     rateGroupId: string;
     durations: Record<number, number>;
-  }> = [
+  };
+
+  const matrix: MatrixRow[] = [
     // Аня — опытная, ставки выше
-    {
-      animatorId: anim1.id,
-      rateGroupId: grpSimple.id,
-      durations: { 30: 1200, 40: 1400, 45: 1500, 60: 2000, 90: 2800, 120: 3500, 180: 5000 },
-    },
-    {
-      animatorId: anim1.id,
-      rateGroupId: grpMascot.id,
-      durations: { 30: 1600, 40: 1800, 45: 2000, 60: 2600, 90: 3600, 120: 4500, 180: 6500 },
-    },
-    {
-      animatorId: anim1.id,
-      rateGroupId: grpShow.id,
-      durations: { 30: 2000, 40: 2400, 45: 2600, 60: 3500, 90: 5000, 120: 6500, 180: 9000 },
-    },
-    {
-      animatorId: anim1.id,
-      rateGroupId: grpHost.id,
-      durations: { 60: 4000, 90: 5500, 120: 7000, 180: 10000 },
-    },
-    {
-      animatorId: anim1.id,
-      rateGroupId: grpPhoto.id,
-      durations: { 60: 3500, 90: 5000, 120: 6500, 180: 9000 },
-    },
-    {
-      animatorId: anim1.id,
-      rateGroupId: grpAddon.id,
-      durations: { 30: 800, 45: 1000, 60: 1200, 90: 1800, 120: 2400 },
-    },
+    { animatorId: anim1.id, rateGroupId: grpSimple.id, durations: { 30: 1200, 40: 1400, 45: 1500, 60: 2000, 90: 2800, 120: 3500, 180: 5000 } },
+    { animatorId: anim1.id, rateGroupId: grpMascot.id, durations: { 30: 1600, 40: 1800, 45: 2000, 60: 2600, 90: 3600, 120: 4500, 180: 6500 } },
+    { animatorId: anim1.id, rateGroupId: grpShow.id, durations: { 30: 2000, 40: 2400, 45: 2600, 60: 3500, 90: 5000, 120: 6500, 180: 9000 } },
+    { animatorId: anim1.id, rateGroupId: grpHost.id, durations: { 60: 4000, 90: 5500, 120: 7000, 180: 10000 } },
+    { animatorId: anim1.id, rateGroupId: grpPhoto.id, durations: { 60: 3500, 90: 5000, 120: 6500, 180: 9000 } },
+    { animatorId: anim1.id, rateGroupId: grpAddon.id, durations: { 30: 800, 45: 1000, 60: 1200, 90: 1800, 120: 2400 } },
     // Пётр — базовые
-    {
-      animatorId: anim2.id,
-      rateGroupId: grpSimple.id,
-      durations: { 30: 1000, 40: 1100, 45: 1200, 60: 1600, 90: 2200, 120: 2800, 180: 4000 },
-    },
-    {
-      animatorId: anim2.id,
-      rateGroupId: grpMascot.id,
-      durations: { 30: 1300, 40: 1500, 45: 1600, 60: 2100, 90: 3000, 120: 3800, 180: 5500 },
-    },
-    {
-      animatorId: anim2.id,
-      rateGroupId: grpShow.id,
-      durations: { 30: 1700, 40: 2000, 45: 2200, 60: 3000, 90: 4200, 120: 5500, 180: 8000 },
-    },
-    {
-      animatorId: anim2.id,
-      rateGroupId: grpHost.id,
-      durations: { 60: 3500, 90: 4800, 120: 6000, 180: 8500 },
-    },
-    {
-      animatorId: anim2.id,
-      rateGroupId: grpPhoto.id,
-      durations: { 60: 3000, 90: 4200, 120: 5500, 180: 7500 },
-    },
-    {
-      animatorId: anim2.id,
-      rateGroupId: grpAddon.id,
-      durations: { 30: 700, 45: 900, 60: 1100, 90: 1600, 120: 2100 },
-    },
+    { animatorId: anim2.id, rateGroupId: grpSimple.id, durations: { 30: 1000, 40: 1100, 45: 1200, 60: 1600, 90: 2200, 120: 2800, 180: 4000 } },
+    { animatorId: anim2.id, rateGroupId: grpMascot.id, durations: { 30: 1300, 40: 1500, 45: 1600, 60: 2100, 90: 3000, 120: 3800, 180: 5500 } },
+    { animatorId: anim2.id, rateGroupId: grpShow.id, durations: { 30: 1700, 40: 2000, 45: 2200, 60: 3000, 90: 4200, 120: 5500, 180: 8000 } },
+    { animatorId: anim2.id, rateGroupId: grpHost.id, durations: { 60: 3500, 90: 4800, 120: 6000, 180: 8500 } },
+    { animatorId: anim2.id, rateGroupId: grpPhoto.id, durations: { 60: 3000, 90: 4200, 120: 5500, 180: 7500 } },
+    { animatorId: anim2.id, rateGroupId: grpAddon.id, durations: { 30: 700, 45: 900, 60: 1100, 90: 1600, 120: 2100 } },
   ];
 
-  let rateCount = 0;
+  // Группируем по аниматору и создаём персональный шаблон
+  const byAnimator = new Map<string, MatrixRow[]>();
   for (const row of matrix) {
-    for (const [dur, amount] of Object.entries(row.durations)) {
-      await prisma.rate.create({
-        data: {
-          animatorId: row.animatorId,
-          rateGroupId: row.rateGroupId,
-          durationMin: Number(dur),
-          amount,
-        },
-      });
-      rateCount++;
-    }
+    const arr = byAnimator.get(row.animatorId) ?? [];
+    arr.push(row);
+    byAnimator.set(row.animatorId, arr);
   }
 
-  console.log(`   ✓ ${rateCount} ставок в матрице`);
+  let rateCount = 0;
+  for (const [animatorId, rows] of byAnimator.entries()) {
+    const animator = animatorId === anim1.id ? anim1 : anim2;
+    const tpl = await prisma.rateTemplate.create({
+      data: {
+        name: `Персональные ставки ${animator.firstName} ${animator.lastName}`,
+        notes: "Создано seed-скриптом",
+      },
+    });
+
+    for (const row of rows) {
+      for (const [dur, amount] of Object.entries(row.durations)) {
+        await prisma.rateTemplateRate.create({
+          data: {
+            templateId: tpl.id,
+            rateGroupId: row.rateGroupId,
+            durationMin: Number(dur),
+            amount,
+          },
+        });
+        rateCount++;
+      }
+    }
+
+    await prisma.user.update({
+      where: { id: animatorId },
+      data: { rateTemplateId: tpl.id },
+    });
+  }
+
+  console.log(`   ✓ ${rateCount} ставок в шаблонах`);
 
   console.log("🌱 Seed: категории расходов…");
 

@@ -259,17 +259,6 @@ export function StaffAnimatorFormScreen() {
               <Text style={styles.secondaryBtnText}>🎯 Шаблон и переопределения</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.secondaryBtn, { marginTop: 10 }]}
-              onPress={() =>
-                navigation.navigate("RateMatrix", {
-                  animatorId: animatorId!,
-                  animatorName: `${firstName} ${lastName}`.trim(),
-                })
-              }
-            >
-              <Text style={styles.secondaryBtnText}>💰 Матрица ставок (legacy)</Text>
-            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.secondaryBtn, { marginTop: 10 }]}

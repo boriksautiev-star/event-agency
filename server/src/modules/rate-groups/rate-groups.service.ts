@@ -8,7 +8,7 @@ export class RateGroupsService {
       where: includeInactive ? undefined : { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       include: {
-        _count: { select: { characters: true, rates: true } },
+        _count: { select: { characters: true } },
       },
     });
   }
@@ -18,7 +18,6 @@ export class RateGroupsService {
       where: { id },
       include: {
         characters: { orderBy: [{ name: "asc" }] },
-        _count: { select: { rates: true } },
       },
     });
     if (!group) throw new AppError("Группа не найдена", 404, "RATE_GROUP_NOT_FOUND");

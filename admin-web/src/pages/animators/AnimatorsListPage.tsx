@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Coins, Pencil, KeyRound, Ban, BarChart3, Layers } from "lucide-react";
+import { Pencil, KeyRound, Ban, BarChart3, Layers } from "lucide-react";
 import type { UserLite, UserStatus } from "../../api/users";
 import {
   useUsers,
@@ -187,16 +187,6 @@ export default function AnimatorsListPage() {
                         >
                           <Layers size={14} />
                         </Button>
-                        <Link to={`/animators/rates?animatorId=${u.id}`}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="!px-2"
-                            title="Матрица ставок"
-                          >
-                            <Coins size={14} />
-                          </Button>
-                        </Link>
                         <Button
                           variant="ghost"
                           size="sm"
