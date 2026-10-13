@@ -167,7 +167,7 @@ export class PushService {
     await this.send({
       userIds: [fromAnimatorId],
       title: "Передача: согласие получено",
-      body: `${toName} согласился(ась). Ждём подтверждения руководителя: ${orderTitle}`,
+      body: `Согласие получено. Ждём подтверждения руководителя: ${orderTitle}`,
       data: { requestId, orderId, type: "handover_accepted_to_from" },
     });
 
