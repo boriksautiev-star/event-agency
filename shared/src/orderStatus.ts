@@ -17,7 +17,8 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 export const ORDER_STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
-  new: ["confirmed", "cancelled"],
+  // new -> in_progress разрешён: final-payment авто-промоутит заказ
+  new: ["confirmed", "in_progress", "cancelled"],
   confirmed: ["in_progress", "cancelled"],
   in_progress: ["completed", "cancelled"],
   completed: [],

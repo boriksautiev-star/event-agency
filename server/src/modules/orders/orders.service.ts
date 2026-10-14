@@ -1,5 +1,6 @@
 import { prisma } from "../../db/prisma";
 import { AssignmentStatus, OrderStatus } from "@prisma/client";
+import { ORDER_STATUS_FLOW } from "@event-agency/shared";
 import { PushService } from "../push/push.service";
 import { AppError } from "../../utils/AppError";
 import {
@@ -718,6 +719,17 @@ export class OrdersService {
         "Аниматор может менять только статус «Выполнен».",
         403,
         "FORBIDDEN",
+      );
+    }
+
+    // B1 (аудит 2026-10-14): валидация допустимых переходов статуса
+    const fromStatus = order.status as keyof typeof ORDER_STATUS_FLOW;
+    const toStatus = data.status as keyof typeof ORDER_STATUS_FLOW;
+    if (!ORDER_STATUS_FLOW[fromStatus].includes(toStatus)) {
+      throw new AppError(
+        `Недопустимый переход статуса: ${fromStatus} -> ${toStatus}`,
+        400,
+        "INVALID_STATUS_TRANSITION",
       );
     }
 
