@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
+import { Select } from "../../components/ui/select";
+import { useAnimatorsList } from "../../hooks/useAnimatorsList";
 import {
   useApproveHandover,
   useHandoverHistory,
@@ -50,6 +52,9 @@ export default function HandoverPage() {
   const [tab, setTab] = useState<HandoverStatusGroup>("pending");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [animatorId, setAnimatorId] = useState("");
+
+  const { data: animators = [] } = useAnimatorsList();
 
   const pending = usePendingApproval();
   const approve = useApproveHandover();
@@ -60,17 +65,19 @@ export default function HandoverPage() {
   const historyQuery = useMemo(
     () => ({
       statusGroup: tab,
+      animatorId: animatorId || undefined,
       from: dateFrom || undefined,
       to: dateTo || undefined,
       limit: 200,
     }),
-    [tab, dateFrom, dateTo],
+    [tab, animatorId, dateFrom, dateTo],
   );
 
-  const history = useHandoverHistory(isPendingTab ? { statusGroup: "pending" } : historyQuery);
+  // Единый источник для всех табов — история с фильтрами
+  const history = useHandoverHistory(historyQuery);
 
-  const items = isPendingTab ? pending.items : (history.data ?? []);
-  const loading = isPendingTab ? pending.isLoading : history.isLoading;
+  const items = history.data ?? [];
+  const loading = history.isLoading;
 
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectComment, setRejectComment] = useState("");
@@ -142,39 +149,55 @@ export default function HandoverPage() {
         </nav>
       </div>
 
-      {/* Фильтр по датам (для не-pending табов) */}
-      {!isPendingTab ? (
-        <Card>
-          <CardContent className="py-3 px-5 flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-gray-500 mr-1">Период:</span>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="!w-auto"
-            />
-            <span className="text-xs text-gray-400">—</span>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="!w-auto"
-            />
-            {dateFrom || dateTo ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-                className="text-xs text-primary hover:underline"
-              >
-                Сбросить
-              </button>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
+      {/* Панель фильтров */}
+      <Card>
+        <CardContent className="py-3 px-5 flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-gray-500 mr-1">Аниматор:</span>
+          <Select
+            value={animatorId}
+            onChange={(e) => setAnimatorId(e.target.value)}
+            className="!w-auto min-w-[220px]"
+          >
+            <option value="">Все аниматоры</option>
+            {animators
+              .slice()
+              .sort((a: any, b: any) => a.lastName.localeCompare(b.lastName))
+              .map((a: any) => (
+                <option key={a.id} value={a.id}>
+                  {a.lastName} {a.firstName}
+                </option>
+              ))}
+          </Select>
+
+          <span className="text-xs text-gray-500 ml-3 mr-1">Период:</span>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="!w-auto"
+          />
+          <span className="text-xs text-gray-400">—</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="!w-auto"
+          />
+          {animatorId || dateFrom || dateTo ? (
+            <button
+              type="button"
+              onClick={() => {
+                setAnimatorId("");
+                setDateFrom("");
+                setDateTo("");
+              }}
+              className="text-xs text-primary hover:underline ml-2"
+            >
+              Сбросить
+            </button>
+          ) : null}
+        </CardContent>
+      </Card>
 
       {loading ? (
         <Card>
