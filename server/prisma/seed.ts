@@ -26,6 +26,7 @@ async function main() {
   await prisma.adminAccrual.deleteMany({});
   await prisma.adminCompensation.deleteMany({});
   await prisma.agencySettings.deleteMany({});
+  await prisma.handoverRequest.deleteMany({});
   await prisma.orderChange.deleteMany({});
   await prisma.orderStatusHistory.deleteMany({});
   await prisma.orderPayment.deleteMany({});
