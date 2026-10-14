@@ -25,3 +25,16 @@ export const HandoverListQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).optional(),
 });
 export type HandoverListQuery = z.infer<typeof HandoverListQuerySchema>;
+
+export const HandoverHistoryQuerySchema = z.object({
+  statusGroup: z
+    .enum(["pending", "approved", "rejected", "cancelled", "all"])
+    .optional()
+    .default("all"),
+  animatorId: z.string().uuid().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+export type HandoverHistoryQuery = z.infer<typeof HandoverHistoryQuerySchema>;

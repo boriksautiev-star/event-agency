@@ -11,6 +11,9 @@ router.get("/my-incoming", requireAuth, HandoverController.myIncoming);
 // ===== Очередь (director/admin) =====
 router.get("/pending-approval", requireAuth, HandoverController.pendingApproval);
 
+// ===== История (director/admin) =====
+router.get("/history", requireAuth, HandoverController.history);
+
 // ===== Действия =====
 router.post("/:id/accept", requireAuth, HandoverController.accept);
 router.post("/:id/decline", requireAuth, HandoverController.decline);

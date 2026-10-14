@@ -4,6 +4,7 @@ import {
   CreateHandoverSchema,
   RejectHandoverSchema,
   HandoverListQuerySchema,
+  HandoverHistoryQuerySchema,
 } from "./handover.schemas";
 import { HandoverService } from "./handover.service";
 
@@ -57,6 +58,15 @@ export class HandoverController {
       requireRole(req, ["director", "admin"]);
       const q = HandoverListQuerySchema.parse(req.query);
       const result = await HandoverService.listPendingApproval(q);
+      res.json(result);
+    } catch (e) { next(e); }
+  }
+
+  static async history(req: Request, res: Response, next: NextFunction) {
+    try {
+      requireRole(req, ["director", "admin"]);
+      const q = HandoverHistoryQuerySchema.parse(req.query);
+      const result = await HandoverService.listHistory(q);
       res.json(result);
     } catch (e) { next(e); }
   }

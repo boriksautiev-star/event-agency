@@ -6,6 +6,7 @@ import {
   CreateHandoverInput,
   RejectHandoverInput,
   HandoverListQuery,
+  HandoverHistoryQuery,
 } from "./handover.schemas";
 
 const ACTIVE_STATUSES = ["invited", "accepted", "completed"] as const;
@@ -253,6 +254,67 @@ export class HandoverService {
           slot: { include: { character: true } },
           fromAnimator: { select: { id: true, firstName: true, lastName: true, phone: true } },
           toAnimator: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        },
+      }),
+      prisma.handoverRequest.count({ where }),
+    ]);
+    return { items, total, limit, offset };
+  }
+
+  static async listHistory(q: HandoverHistoryQuery) {
+    const where: any = {};
+
+    if (q.statusGroup && q.statusGroup !== "all") {
+      if (q.statusGroup === "pending") {
+        where.status = { in: ["pending_receiver", "pending_approval"] };
+      } else if (q.statusGroup === "approved") {
+        where.status = "approved";
+      } else if (q.statusGroup === "rejected") {
+        where.status = { in: ["rejected_by_receiver", "rejected_by_admin"] };
+      } else if (q.statusGroup === "cancelled") {
+        where.status = "cancelled";
+      }
+    }
+
+    if (q.animatorId) {
+      where.OR = [
+        { fromAnimatorId: q.animatorId },
+        { toAnimatorId: q.animatorId },
+      ];
+    }
+
+    if (q.from || q.to) {
+      where.requestedAt = {};
+      if (q.from) where.requestedAt.gte = new Date(q.from);
+      if (q.to) where.requestedAt.lte = new Date(q.to + "T23:59:59.999");
+    }
+
+    const limit = q.limit ?? 100;
+    const offset = q.offset ?? 0;
+
+    const [items, total] = await Promise.all([
+      prisma.handoverRequest.findMany({
+        where,
+        orderBy: { requestedAt: "desc" },
+        take: limit,
+        skip: offset,
+        include: {
+          order: {
+            select: {
+              id: true,
+              title: true,
+              eventDate: true,
+              startTime: true,
+              endTime: true,
+            },
+          },
+          slot: { include: { character: true } },
+          fromAnimator: {
+            select: { id: true, firstName: true, lastName: true, phone: true },
+          },
+          toAnimator: {
+            select: { id: true, firstName: true, lastName: true, phone: true },
+          },
         },
       }),
       prisma.handoverRequest.count({ where }),

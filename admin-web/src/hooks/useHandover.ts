@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   approveHandover,
   fetchPendingApproval,
+  fetchHistory,
+  HandoverHistoryQuery,
   rejectHandover,
 } from "../api/handover";
 
@@ -17,6 +19,14 @@ export function usePendingApproval() {
     items,
     count: items.length,
   };
+}
+
+export function useHandoverHistory(q: HandoverHistoryQuery) {
+  return useQuery({
+    queryKey: ["handover", "history", q],
+    queryFn: () => fetchHistory(q),
+    staleTime: 30_000,
+  });
 }
 
 export function useApproveHandover() {

@@ -1,18 +1,76 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
+import { Input } from "../../components/ui/input";
 import {
   useApproveHandover,
+  useHandoverHistory,
   usePendingApproval,
   useRejectHandover,
 } from "../../hooks/useHandover";
+import type {
+  HandoverStatus,
+  HandoverStatusGroup,
+} from "../../api/handover";
 import { formatDate, formatTimeRange } from "../../lib/format";
 
+const STATUS_LABELS: Record<HandoverStatus, string> = {
+  pending_receiver: "Ждёт ответа",
+  pending_approval: "Ждёт подтверждения",
+  approved: "Подтверждена",
+  rejected_by_receiver: "Отклонил получатель",
+  rejected_by_admin: "Отклонил руководитель",
+  cancelled: "Отозвана",
+};
+
+const STATUS_VARIANT: Record<
+  HandoverStatus,
+  "success" | "danger" | "warning" | "default"
+> = {
+  pending_receiver: "warning",
+  pending_approval: "warning",
+  approved: "success",
+  rejected_by_receiver: "danger",
+  rejected_by_admin: "danger",
+  cancelled: "default",
+};
+
+type Tab = { key: HandoverStatusGroup; label: string };
+
+const TABS: Tab[] = [
+  { key: "pending", label: "Ожидают" },
+  { key: "all", label: "Все" },
+  { key: "approved", label: "Подтверждённые" },
+  { key: "rejected", label: "Отклонённые" },
+  { key: "cancelled", label: "Отменённые" },
+];
+
 export default function HandoverPage() {
+  const [tab, setTab] = useState<HandoverStatusGroup>("pending");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const pending = usePendingApproval();
   const approve = useApproveHandover();
   const reject = useRejectHandover();
+
+  const isPendingTab = tab === "pending";
+
+  const historyQuery = useMemo(
+    () => ({
+      statusGroup: tab,
+      from: dateFrom || undefined,
+      to: dateTo || undefined,
+      limit: 200,
+    }),
+    [tab, dateFrom, dateTo],
+  );
+
+  const history = useHandoverHistory(isPendingTab ? { statusGroup: "pending" } : historyQuery);
+
+  const items = isPendingTab ? pending.items : (history.data ?? []);
+  const loading = isPendingTab ? pending.isLoading : history.isLoading;
 
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectComment, setRejectComment] = useState("");
@@ -44,23 +102,88 @@ export default function HandoverPage() {
     );
   };
 
+  const pendingCount = pending.count;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-xl font-bold text-gray-900">Заявки на передачу</h1>
-        {pending.count > 0 ? (
-          <Badge variant="warning">Ожидают: {pending.count}</Badge>
+        {pendingCount > 0 ? (
+          <Badge variant="warning">Ожидают: {pendingCount}</Badge>
         ) : null}
       </div>
 
-      {pending.isLoading ? (
+      {/* Табы */}
+      <div className="border-b border-gray-200">
+        <nav className="flex gap-1 -mb-px flex-wrap">
+          {TABS.map((t) => {
+            const active = t.key === tab;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={[
+                  "px-4 py-2 text-sm font-semibold border-b-2 transition",
+                  active
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-800",
+                ].join(" ")}
+              >
+                {t.label}
+                {t.key === "pending" && pendingCount > 0 ? (
+                  <span className="ml-1.5 text-xs text-amber-600 font-bold">
+                    ({pendingCount})
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Фильтр по датам (для не-pending табов) */}
+      {!isPendingTab ? (
+        <Card>
+          <CardContent className="py-3 px-5 flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-gray-500 mr-1">Период:</span>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="!w-auto"
+            />
+            <span className="text-xs text-gray-400">—</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="!w-auto"
+            />
+            {dateFrom || dateTo ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                className="text-xs text-primary hover:underline"
+              >
+                Сбросить
+              </button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {loading ? (
         <Card>
           <CardContent className="py-8 text-sm text-gray-500">Загрузка…</CardContent>
         </Card>
-      ) : pending.items.length === 0 ? (
+      ) : items.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-sm text-emerald-600">
-            Очередь пуста — заявок на подтверждение нет ✓
+            {isPendingTab ? "Очередь пуста — заявок на подтверждение нет ✓" : "Нет заявок"}
           </CardContent>
         </Card>
       ) : (
@@ -74,16 +197,18 @@ export default function HandoverPage() {
                   <th className="px-4 py-3">Персонаж</th>
                   <th className="px-4 py-3">От кого</th>
                   <th className="px-4 py-3">Кому</th>
+                  <th className="px-4 py-3 w-40">Статус</th>
                   <th className="px-4 py-3 w-64">Действия</th>
                 </tr>
               </thead>
               <tbody>
-                {pending.items.map((req) => {
+                {items.map((req) => {
                   const char =
                     req.slot?.character?.name ??
                     req.slot?.characterNameSnapshot ??
                     "—";
                   const isRejecting = rejectingId === req.id;
+                  const isPendingRow = req.status === "pending_approval";
                   return (
                     <tr key={req.id} className="border-b border-gray-100 last:border-0">
                       <td className="px-4 py-3">
@@ -105,24 +230,26 @@ export default function HandoverPage() {
                         <div className="font-medium text-gray-800">
                           {req.fromAnimator.firstName} {req.fromAnimator.lastName}
                         </div>
-                        {req.fromAnimator.phone ? (
-                          <div className="text-xs text-gray-400">
-                            {req.fromAnimator.phone}
-                          </div>
-                        ) : null}
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-800">
                           {req.toAnimator.firstName} {req.toAnimator.lastName}
                         </div>
-                        {req.toAnimator.phone ? (
-                          <div className="text-xs text-gray-400">
-                            {req.toAnimator.phone}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={STATUS_VARIANT[req.status]}>
+                          {STATUS_LABELS[req.status]}
+                        </Badge>
+                        {req.rejectComment ? (
+                          <div className="text-xs text-gray-400 mt-1 italic">
+                            «{req.rejectComment}»
                           </div>
                         ) : null}
                       </td>
                       <td className="px-4 py-3">
-                        {isRejecting ? (
+                        {!isPendingRow ? (
+                          <span className="text-xs text-gray-400">—</span>
+                        ) : isRejecting ? (
                           <div className="space-y-2">
                             <textarea
                               className="w-full text-xs border border-gray-300 rounded p-2"
@@ -164,8 +291,8 @@ export default function HandoverPage() {
                             </button>
                           </div>
                         )}
-                        {req.comment ? (
-                          <div className="text-xs text-gray-400 mt-2 italic">
+                        {req.comment && !isPendingRow ? (
+                          <div className="text-xs text-gray-400 mt-1 italic">
                             «{req.comment}»
                           </div>
                         ) : null}
