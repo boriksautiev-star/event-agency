@@ -201,9 +201,7 @@ export function DashboardScreen() {
         <TouchableOpacity
           style={styles.handoverBanner}
           activeOpacity={0.7}
-          onPress={() => {
-            // заявки — только на просмотр, действий нет в мобилке
-          }}
+          onPress={() => navigation.navigate("HandoverPending")}
         >
           <Text style={styles.handoverTitle}>
             📥 Заявки на передачу заказов: {data.pendingHandover}

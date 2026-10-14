@@ -18,6 +18,8 @@ import {
   acceptHandover,
   declineHandover,
   cancelHandover,
+  approveHandover,
+  rejectHandover,
   HandoverRequest,
 } from "../../api/handover";
 import { useAuth } from "../../auth/AuthContext";
@@ -37,6 +39,8 @@ export function HandoverDetailScreen() {
   const [busy, setBusy] = useState(false);
   const [declineComment, setDeclineComment] = useState("");
   const [showDecline, setShowDecline] = useState(false);
+  const [rejectComment, setRejectComment] = useState("");
+  const [showReject, setShowReject] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -87,6 +91,46 @@ export function HandoverDetailScreen() {
     }
   };
 
+  const handleApprove = () => {
+    Alert.alert(
+      "Подтвердить передачу?",
+      "Заказ будет передан выбранному аниматору.",
+      [
+        { text: "Отмена", style: "cancel" },
+        {
+          text: "Подтвердить",
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await approveHandover(requestId);
+              Alert.alert("Готово", "Передача подтверждена");
+              await load();
+            } catch (e: any) {
+              Alert.alert("Ошибка", e?.response?.data?.error ?? "Не удалось подтвердить");
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleReject = async () => {
+    setBusy(true);
+    try {
+      await rejectHandover(requestId, rejectComment.trim() || null);
+      Alert.alert("Готово", "Передача отклонена");
+      setShowReject(false);
+      setRejectComment("");
+      await load();
+    } catch (e: any) {
+      Alert.alert("Ошибка", e?.response?.data?.error ?? "Не удалось отклонить");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleCancel = () => {
     Alert.alert("Отозвать заявку?", "Заказ останется за вами.", [
       { text: "Нет", style: "cancel" },
@@ -125,6 +169,9 @@ export function HandoverDetailScreen() {
     );
   }
 
+  const isDirector = user.role === "director";
+  const isAdmin = user.role === "admin";
+  const isStaff = isDirector || isAdmin;
   const isIncoming = item.toAnimatorId === user.id;
   const isOutgoing = item.fromAnimatorId === user.id;
   const canAcceptOrDecline =
@@ -132,6 +179,8 @@ export function HandoverDetailScreen() {
   const canCancel =
     isOutgoing &&
     (item.status === "pending_receiver" || item.status === "pending_approval");
+  const canApproveOrReject =
+    isStaff && item.status === "pending_approval";
 
   const other = isIncoming ? item.fromAnimator : item.toAnimator;
 
@@ -217,6 +266,66 @@ export function HandoverDetailScreen() {
           </View>
         ) : null}
 
+        {canApproveOrReject && !showReject ? (
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.btn, styles.btnApprove, busy && styles.btnDisabled]}
+              onPress={handleApprove}
+              disabled={busy}
+            >
+              {busy ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.btnText}>Подтвердить</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btn, styles.btnDecline, busy && styles.btnDisabled]}
+              onPress={() => setShowReject(true)}
+              disabled={busy}
+            >
+              <Text style={styles.btnText}>Отклонить</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {canApproveOrReject && showReject ? (
+          <View style={styles.card}>
+            <Text style={styles.section}>Причина отклонения (опционально)</Text>
+            <TextInput
+              style={styles.input}
+              value={rejectComment}
+              onChangeText={setRejectComment}
+              placeholder="Например: нет свободных слотов"
+              multiline
+              numberOfLines={3}
+            />
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnCancel, busy && styles.btnDisabled]}
+                onPress={() => {
+                  setShowReject(false);
+                  setRejectComment("");
+                }}
+                disabled={busy}
+              >
+                <Text style={[styles.btnText, { color: colors.text }]}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnDecline, busy && styles.btnDisabled]}
+                onPress={handleReject}
+                disabled={busy}
+              >
+                {busy ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.btnText}>Отклонить</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+
         {canCancel ? (
           <TouchableOpacity
             style={[styles.btn, styles.btnCancel, busy && styles.btnDisabled, { marginTop: 8 }]}
@@ -279,6 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   btnAccept: { backgroundColor: colors.success },
+  btnApprove: { backgroundColor: colors.success },
   btnDecline: { backgroundColor: colors.danger },
   btnCancel: {
     backgroundColor: "#f1f5f9",

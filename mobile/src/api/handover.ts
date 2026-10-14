@@ -116,3 +116,16 @@ export async function declineHandover(id: string, rejectComment?: string | null)
 export async function cancelHandover(id: string): Promise<void> {
   await api.delete(`/api/handover/${id}`);
 }
+
+export async function approveHandover(id: string): Promise<void> {
+  await api.post(`/api/handover/${id}/approve`, {});
+}
+
+export async function rejectHandover(
+  id: string,
+  rejectComment?: string | null,
+): Promise<void> {
+  await api.post(`/api/handover/${id}/reject`, {
+    rejectComment: rejectComment ?? null,
+  });
+}
