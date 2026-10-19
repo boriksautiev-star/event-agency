@@ -322,7 +322,12 @@ export class OrdersService {
             slot: { include: { character: true } },
           },
         },
-        history: { orderBy: { createdAt: "desc" } },
+        history: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            user: { select: { id: true, firstName: true, lastName: true, role: true } },
+          },
+        },
         changes: {
           orderBy: { changedAt: "desc" },
           include: {

@@ -56,6 +56,21 @@ export type OrderChange = {
     role: string;
   } | null;
 };
+export type OrderStatusHistory = {
+  id: string;
+  orderId: string;
+  oldStatus: OrderStatus | null;
+  newStatus: OrderStatus;
+  changedBy: string | null;
+  comment: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+};
 export type Order = {
   id: string;
   clientId: string;
@@ -89,6 +104,7 @@ export type Order = {
   acceptedBy?: string | null;
   adminId?: string | null;
   changes?: OrderChange[];
+  history?: OrderStatusHistory[];
 };
 
 export type ListResponse<T> = {

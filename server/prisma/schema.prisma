@@ -45,6 +45,7 @@ model User {
   rateTemplate       RateTemplate?          @relation("TemplateAnimators", fields: [rateTemplateId], references: [id], onDelete: SetNull)
   rateOverrides      AnimatorRateOverride[] @relation("AnimatorOverrides")
 
+  statusHistory OrderStatusHistory[]
   @@map("users")
 }
 
@@ -378,6 +379,7 @@ model OrderStatusHistory {
   createdAt DateTime     @default(now()) @map("created_at")
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [changedBy], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@map("order_status_history")

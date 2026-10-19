@@ -12,7 +12,7 @@ import {
 import { useFocusEffect, useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../api/client";
-import type { Order } from "../../api/types";
+import type { Order, OrderStatusHistory } from "../../api/types";
 import { formatDuration } from "@event-agency/shared";
 import { colors } from "../../theme/colors";
 import {
@@ -476,43 +476,18 @@ export function StaffOrderDetailScreen() {
         ) : null}
       </View>
 
-      {order.changes && order.changes.length > 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.section}>История изменений</Text>
-          {order.changes.map((c, idx) => (
-            <View key={c.id} style={[styles.changeRow, idx === 0 && { borderTopWidth: 0 }]}>
-              <Text style={styles.changeWhen}>
-                {new Date(c.changedAt).toLocaleString("ru-RU", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </Text>
-              <Text style={styles.changeWho}>
-                {c.user ? `${c.user.firstName} ${c.user.lastName}` : "—"}
-              </Text>
-              <Text style={styles.changeWhat}>
-                <Text style={styles.changeField}>
-                  {CHANGE_FIELD_LABELS[c.field] ?? c.field}:{" "}
-                </Text>
-                {c.oldValue != null ? (
-                  <Text style={styles.changeOld}>
-                    {translateChangeValue(c.field, c.oldValue)} → 
-                  </Text>
-                ) : null}
-                <Text style={styles.changeNew}>
-                  {translateChangeValue(c.field, c.newValue)}
-                </Text>
-              </Text>
-              {c.summary ? (
-                <Text style={styles.changeSummary}>{c.summary}</Text>
-              ) : null}
-            </View>
-          ))}
-        </View>
-      ) : null}
+      {(() => {
+        const timeline = buildTimeline(order);
+        if (timeline.length === 0) return null;
+        return (
+          <View style={styles.card}>
+            <Text style={styles.section}>История изменений</Text>
+            {timeline.map((it, idx) => (
+              <TimelineRow key={`${it.kind}-${it.data.id}`} item={it} isFirst={idx === 0} />
+            ))}
+          </View>
+        );
+      })()}
 
       <View style={{ height: 20 }} />
 
@@ -538,6 +513,87 @@ export function StaffOrderDetailScreen() {
         onSaved={load}
       />
     </ScrollView>
+  );
+}
+
+type TimelineItem =
+  | { kind: "change"; at: string; data: any }
+  | { kind: "status"; at: string; data: OrderStatusHistory };
+
+function buildTimeline(order: Order): TimelineItem[] {
+  const changes: TimelineItem[] = ((order.changes ?? []) as any[]).map((c) => ({
+    kind: "change" as const,
+    at: c.changedAt as string,
+    data: c,
+  }));
+  const history: TimelineItem[] = ((order.history ?? []) as OrderStatusHistory[]).map((h) => ({
+    kind: "status" as const,
+    at: h.createdAt,
+    data: h,
+  }));
+  return [...changes, ...history].sort((a, b) => b.at.localeCompare(a.at));
+}
+
+function TimelineRow({ item, isFirst }: { item: TimelineItem; isFirst: boolean }) {
+  const style = [styles.changeRow, isFirst && { borderTopWidth: 0 }];
+  if (item.kind === "status") {
+    const h = item.data;
+    const who = h.user ? `${h.user.firstName} ${h.user.lastName}`.trim() : "—";
+    const oldLbl = h.oldStatus
+      ? ORDER_STATUS_LABELS[h.oldStatus] ?? h.oldStatus
+      : "—";
+    const newLbl = ORDER_STATUS_LABELS[h.newStatus] ?? h.newStatus;
+    return (
+      <View style={style}>
+        <Text style={styles.changeWhen}>
+          {new Date(h.createdAt).toLocaleString("ru-RU", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+        <Text style={styles.changeWho}>{who}</Text>
+        <Text style={styles.changeWhat}>
+          <Text style={styles.changeField}>🎯 Статус: </Text>
+          <Text style={styles.changeOld}>{oldLbl} → </Text>
+          <Text style={styles.changeNew}>{newLbl}</Text>
+        </Text>
+        {h.comment ? <Text style={styles.changeSummary}>{h.comment}</Text> : null}
+      </View>
+    );
+  }
+  const c = item.data;
+  return (
+    <View style={style}>
+      <Text style={styles.changeWhen}>
+        {new Date(c.changedAt).toLocaleString("ru-RU", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </Text>
+      <Text style={styles.changeWho}>
+        {c.user ? `${c.user.firstName} ${c.user.lastName}` : "—"}
+      </Text>
+      <Text style={styles.changeWhat}>
+        <Text style={styles.changeField}>
+          {CHANGE_FIELD_LABELS[c.field] ?? c.field}:{" "}
+        </Text>
+        {c.oldValue != null ? (
+          <Text style={styles.changeOld}>
+            {translateChangeValue(c.field, c.oldValue)} →
+          </Text>
+        ) : null}
+        <Text style={styles.changeNew}>
+          {translateChangeValue(c.field, c.newValue)}
+        </Text>
+      </Text>
+      {c.summary ? <Text style={styles.changeSummary}>{c.summary}</Text> : null}
+    </View>
   );
 }
 

@@ -33,6 +33,16 @@ export type OrderChange = {
   summary: string | null;
   user?: { id: string; firstName: string; lastName: string; role: Role };
 };
+export type OrderStatusHistory = {
+  id: string;
+  orderId: string;
+  oldStatus: OrderStatus | null;
+  newStatus: OrderStatus;
+  changedBy: string | null;
+  comment: string | null;
+  createdAt: string;
+  user?: { id: string; firstName: string; lastName: string; role: Role } | null;
+};
 
 export type OrderSlot = {
   id: string;
@@ -74,6 +84,7 @@ export type Order = {
   comment: string | null;
   client?: { id: string; name: string; phone: string };
   changes?: OrderChange[];
+  history?: OrderStatusHistory[];
   slots?: OrderSlot[];
   animators?: Array<{
     id: string;

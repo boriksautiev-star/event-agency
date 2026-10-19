@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import type { OrderStatus, OrderSlot } from "../api/types";
+import type { OrderStatus, OrderSlot, OrderStatusHistory } from "../api/types";
 import {
   ASSIGNMENT_STATUS_LABELS,
   ORDER_STATUS_FLOW,
@@ -552,33 +552,33 @@ export default function OrderDetailPage() {
           <CardTitle>История изменений</CardTitle>
         </CardHeader>
         <CardContent>
-          {(order.changes ?? []).length === 0 ? (
-            <div className="text-sm text-gray-500">Изменений пока не было</div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                {(showAllChanges
-                  ? (order.changes ?? [])
-                  : (order.changes ?? []).slice(0, 20)
-                ).map((c: any) => (
-                  <ChangeRow key={c.id} change={c} />
-                ))}
-              </div>
-              {(order.changes ?? []).length > 20 ? (
-                <div className="pt-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowAllChanges((v) => !v)}
-                    className="text-xs text-primary hover:underline font-semibold"
-                  >
-                    {showAllChanges
-                      ? "Свернуть"
-                      : `Показать все (${(order.changes ?? []).length})`}
-                  </button>
+          {(() => {
+            const timeline = buildTimeline(order);
+            if (timeline.length === 0) {
+              return <div className="text-sm text-gray-500">Изменений пока не было</div>;
+            }
+            const visible = showAllChanges ? timeline : timeline.slice(0, 20);
+            return (
+              <>
+                <div className="space-y-2">
+                  {visible.map((it) => (
+                    <TimelineRow key={`${it.kind}-${it.data.id}`} item={it} />
+                  ))}
                 </div>
-              ) : null}
-            </>
-          )}
+                {timeline.length > 20 ? (
+                  <div className="pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllChanges((v) => !v)}
+                      className="text-xs text-primary hover:underline font-semibold"
+                    >
+                      {showAllChanges ? "Свернуть" : `Показать все (${timeline.length})`}
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
 
@@ -781,6 +781,66 @@ const ROLE_LABELS: Record<string, string> = {
   animator: "Аниматор",
 };
 
+type TimelineItem =
+  | { kind: "change"; at: string; data: any }
+  | { kind: "status"; at: string; data: OrderStatusHistory };
+
+function buildTimeline(order: any): TimelineItem[] {
+  const changes: TimelineItem[] = ((order.changes ?? []) as any[]).map((c) => ({
+    kind: "change" as const,
+    at: c.changedAt as string,
+    data: c,
+  }));
+  const history: TimelineItem[] = ((order.history ?? []) as OrderStatusHistory[]).map((h) => ({
+    kind: "status" as const,
+    at: h.createdAt,
+    data: h,
+  }));
+  return [...changes, ...history].sort((a, b) => b.at.localeCompare(a.at));
+}
+
+function StatusRow({ h }: { h: OrderStatusHistory }) {
+  const who = h.user
+    ? `${h.user.lastName ?? ""} ${h.user.firstName ?? ""}`.trim()
+    : "—";
+  const role = h.user?.role
+    ? ROLE_LABELS[h.user.role] ?? h.user.role
+    : null;
+  const oldLbl = h.oldStatus
+    ? ORDER_STATUS_LABELS[h.oldStatus as keyof typeof ORDER_STATUS_LABELS] ?? h.oldStatus
+    : "—";
+  const newLbl =
+    ORDER_STATUS_LABELS[h.newStatus as keyof typeof ORDER_STATUS_LABELS] ?? h.newStatus;
+  return (
+    <div className="flex items-start gap-3 text-sm border-b border-gray-50 pb-2 last:border-b-0">
+      <div className="text-xs text-gray-400 whitespace-nowrap pt-0.5 w-[110px]">
+        {formatDateTime(h.createdAt)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-gray-800">
+          <span className="font-semibold">{who}</span>
+          {role ? (
+            <span className="text-xs text-gray-400 ml-1">({role})</span>
+          ) : null}
+          <span className="text-gray-500"> · 🎯 Статус</span>
+        </div>
+        <div className="text-xs mt-0.5">
+          <span className="text-gray-400 line-through">{oldLbl}</span>
+          <span className="text-gray-400 mx-1">→</span>
+          <span className="text-gray-800 font-semibold">{newLbl}</span>
+          {h.comment ? (
+            <span className="text-gray-400 ml-2">· {h.comment}</span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TimelineRow({ item }: { item: TimelineItem }) {
+  if (item.kind === "status") return <StatusRow h={item.data} />;
+  return <ChangeRow change={item.data} />;
+}
 function ChangeRow({ change }: { change: any }) {
   const who = change.user
     ? `${change.user.lastName ?? ""} ${change.user.firstName ?? ""}`.trim()
