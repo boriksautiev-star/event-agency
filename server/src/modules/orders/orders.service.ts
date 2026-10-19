@@ -2,6 +2,7 @@ import { prisma } from "../../db/prisma";
 import { AssignmentStatus, OrderStatus } from "@prisma/client";
 import { ORDER_STATUS_FLOW } from "@event-agency/shared";
 import { PushService } from "../push/push.service";
+import { NotificationService } from "../push/notification.service";
 import { AppError } from "../../utils/AppError";
 import {
   AssignAnimatorInput,
@@ -1136,6 +1137,30 @@ export class OrdersService {
       }
     }
 
+    // B5: push при завершении работы аниматором
+    if (data.status === "completed") {
+      try {
+        const order = await prisma.order.findUnique({
+          where: { id: orderId },
+          select: { title: true, createdBy: true, adminId: true },
+        });
+        const recipients = new Set<string>();
+        if (order?.createdBy) recipients.add(order.createdBy);
+        if (order?.adminId) recipients.add(order.adminId);
+        
+        if (recipients.size > 0) {
+          const animatorName = `${updated.animator.firstName} ${updated.animator.lastName}`;
+          await NotificationService.notifyOrderCompletedByAnimator(
+            Array.from(recipients),
+            animatorName,
+            order?.title ?? "Заказ",
+            orderId,
+          );
+        }
+      } catch (e) {
+        console.warn("[push] notifyOrderCompletedByAnimator failed:", e);
+      }
+    }
     if (data.status === "accepted" || data.status === "declined") {
       try {
         const order = await prisma.order.findUnique({
