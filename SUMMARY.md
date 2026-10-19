@@ -234,7 +234,7 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 - PM2: `event-agency-api` online (id 10), health ok
 - Typecheck: shared, server, admin-web — чисто; mobile `npx tsc --noEmit` — чисто
 - Git: main = origin
-- HEAD: `ffe512d shared+server: validate OrderStatus transitions (B1) + allow new->in_progress (B8)`
+- HEAD: `acde9f8 feat: unified history timeline (B3/B4)`
 
 **Сделано за сессию 2026-10-11..14:**
 1. HA1–HA4 (Handover): модель + API + push + cron + мобилка + admin-web
@@ -254,6 +254,7 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 15. **АУДИТ логики статусов заказа** (14.10): e2e-скрипт + анализ, найдено 7 багов/рисков
 16. **B1 FIXED:** валидация `ORDER_STATUS_FLOW` в `OrdersService.updateStatus` — `400 INVALID_STATUS_TRANSITION` на недопустимый переход
 17. **B8 FIXED:** FLOW расширен — `new → in_progress` разрешён (final-payment авто-промоутит заказ)
+18. **B3/B4 FIXED:** Единый таймлайн истории (StatusHistory + OrderChange) в admin-web и mobile + миграция `OrderStatusHistory.user` + `buildTimeline`
 
 ## 🚧 План на следующие сессии
 
