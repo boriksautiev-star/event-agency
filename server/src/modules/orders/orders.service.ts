@@ -4,6 +4,7 @@ import { ORDER_STATUS_FLOW } from "@event-agency/shared";
 import { PushService } from "../push/push.service";
 import { NotificationService } from "../push/notification.service";
 import { AppError } from "../../utils/AppError";
+import { LicenseService } from "../../license/license.service";
 import {
   AssignAnimatorInput,
   CreateOrderInput,
@@ -459,6 +460,15 @@ export class OrdersService {
   }
 
   static async create(data: CreateOrderInput, createdBy: string) {
+    const license = await LicenseService.getStatus();
+    if (license.status === "expired" || license.status === "invalid") {
+      throw new AppError(
+        license.reason ?? "Лицензия истекла или недействительна. Создание заказов заблокировано.",
+        403,
+        "LICENSE_EXPIRED",
+      );
+    }
+
     const client = await prisma.client.findUnique({ where: { id: data.clientId } });
     if (!client) throw new AppError("Клиент не найден", 404, "CLIENT_NOT_FOUND");
 

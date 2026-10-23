@@ -112,6 +112,7 @@ model AgencySettings {
   updatedAt                DateTime @updatedAt @map("updated_at")
 
   @@map("agency_settings")
+  lastSeenAt DateTime? @map("last_seen_at")
 }
 
 model Client {

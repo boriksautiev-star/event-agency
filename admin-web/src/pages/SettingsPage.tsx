@@ -7,6 +7,7 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent } from "../components/ui/card";
 import { Textarea } from "../components/ui/textarea";
 import { NotificationSettingsCard } from "../components/NotificationSettingsCard";
+import { LicenseCard } from "../components/LicenseCard";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -211,6 +212,12 @@ export default function SettingsPage() {
           </Button>
         </div>
       </form>
+      )}
+
+      {isDirector && (
+        <div className="pt-2">
+          <LicenseCard />
+        </div>
       )}
 
       <div className="pt-2">

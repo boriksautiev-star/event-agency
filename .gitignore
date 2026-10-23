@@ -84,3 +84,8 @@ create-*.ps1
 approve-*.ps1
 accept-*.ps1
 reject-*.ps1
+
+# License private key (никогда не коммитить!)
+server/license/private.pem
+*.pem.private
+license-*.key

@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { LicenseBanner } from "../components/LicenseBanner";
 
 type Role = "director" | "admin" | "animator";
 
@@ -84,6 +85,7 @@ export default function AppLayout() {
             {user?.role === "director" ? "Директор" : "Администратор"}
           </div>
         </header>
+        <LicenseBanner />
         <div className="p-6">
           <Outlet />
         </div>
