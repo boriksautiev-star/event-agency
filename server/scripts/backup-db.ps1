@@ -93,17 +93,35 @@ $durationMs = [int](($endTime - $startTime).TotalMilliseconds)
 
 $fileName = Split-Path $backupFile -Leaf
 $logFile = Join-Path $scriptDir "log-backup.js"
+$logId = $null
 if (Test-Path $logFile) {
     Push-Location $serverDir
     try {
         if ($dumpOk -and (Test-Path $backupFile)) {
             $size = (Get-Item $backupFile).Length
-            & node $logFile $fileName $backupFile $size "success" "-" $durationMs $TriggeredBy
+            $logId = & node $logFile $fileName $backupFile $size "success" "-" $durationMs $TriggeredBy
         } else {
-            & node $logFile $fileName $backupFile "0" "failed" $dumpError $durationMs $TriggeredBy
+            & node $logFile $fileName $backupFile "0" "failed" $dumpError $durationMs $TriggeredBy | Out-Null
         }
     } finally {
         Pop-Location
+    }
+}
+
+# Upload to S3 targets (если есть enabled)
+if ($dumpOk -and $logId) {
+    $uploadScript = Join-Path $scriptDir "upload-to-s3.ts"
+    if (Test-Path $uploadScript) {
+        Write-Info "Checking S3 targets..."
+        Push-Location $serverDir
+        try {
+            $uploadOut = & npx --yes tsx $uploadScript $logId $backupFile $fileName 2>&1
+            if ($uploadOut) { Write-Host ($uploadOut | Out-String) }
+        } catch {
+            Write-Warn "S3 upload failed: $_"
+        } finally {
+            Pop-Location
+        }
     }
 }
 

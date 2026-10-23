@@ -10,7 +10,7 @@ if (!fileName || !filePath || !sizeBytesStr || !status) {
 
 (async () => {
   try {
-    await p.backupLog.create({
+    const log = await p.backupLog.create({
       data: {
         fileName,
         filePath,
@@ -21,6 +21,7 @@ if (!fileName || !filePath || !sizeBytesStr || !status) {
         triggeredBy: triggeredBy || "manual",
       },
     });
+    process.stdout.write(log.id);
   } catch (e) {
     console.error("[log-backup] Failed:", e.message);
     process.exit(1);
