@@ -19,7 +19,7 @@ const NAV: NavItem[] = [
   { to: "/catalog", label: "Справочники", icon: "📚" },
   { to: "/finance", label: "Финансы", icon: "💰" },
   { to: "/staff", label: "Сотрудники", icon: "💼", roles: ["director"] },
-  { to: "/settings", label: "Настройки", icon: "⚙️", roles: ["director"] },
+  { to: "/settings", label: "Настройки", icon: "⚙️", roles: ["director", "admin"] },
 ];
 
 export default function AppLayout() {

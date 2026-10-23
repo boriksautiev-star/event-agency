@@ -5,11 +5,12 @@ import {
   SettingsInput,
 } from "../api/settings";
 
-export function useSettings() {
+export function useSettings(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["settings"],
     queryFn: fetchSettings,
     staleTime: 60_000,
+    enabled: options?.enabled ?? true,
   });
 }
 

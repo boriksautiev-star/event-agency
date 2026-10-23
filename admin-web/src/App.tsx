@@ -47,8 +47,10 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/handover" element={<HandoverPage />} />
             </Route>
-            <Route element={<RequireRole roles={["director"]} />}>
+            <Route element={<RequireRole roles={["director", "admin"]} />}>
               <Route path="/settings" element={<SettingsPage />} />
+            </Route>
+            <Route element={<RequireRole roles={["director"]} />}>
               <Route path="/staff" element={<StaffListPage />} />
               <Route path="/staff/:id" element={<StaffDetailPage />} />
             </Route>

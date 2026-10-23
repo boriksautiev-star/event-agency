@@ -24,6 +24,12 @@ export function AnimatorProfileScreen() {
 
       <TouchableOpacity
         style={styles.linkButton}
+        onPress={() => navigation.navigate("NotificationSettings")}
+      >
+        <Text style={styles.linkButtonText}>🔔  Настройки уведомлений</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.linkButton}
         onPress={() => navigation.navigate("AboutAgency")}
       >
         <Text style={styles.linkButtonText}>🏢  О агентстве</Text>

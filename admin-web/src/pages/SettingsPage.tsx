@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useSettings, useUpdateSettings } from "../hooks/useSettings";
 import { Button } from "../components/ui/button";
@@ -11,7 +10,8 @@ import { NotificationSettingsCard } from "../components/NotificationSettingsCard
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { data, isLoading, isError, error } = useSettings();
+  const isDirector = user?.role === "director";
+  const { data, isLoading, isError, error } = useSettings({ enabled: isDirector });
   const updateMut = useUpdateSettings();
 
   const [name, setName] = useState("");
@@ -45,10 +45,6 @@ export default function SettingsPage() {
     setPrepayPercent(String(data.defaultPrepaymentPercent ?? 30));
   }, [data]);
 
-  if (user?.role !== "director") {
-    return <Navigate to="/orders" replace />;
-  }
-
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     setErr(null);
@@ -81,10 +77,10 @@ export default function SettingsPage() {
     );
   };
 
-  if (isLoading) {
+  if (isDirector && isLoading) {
     return <div className="p-10 text-center text-gray-500">Загрузка…</div>;
   }
-  if (isError) {
+  if (isDirector && isError) {
     return (
       <div className="p-10 text-center text-red-600">
         Ошибка: {(error as any)?.response?.data?.error ?? "Не удалось загрузить"}
@@ -98,6 +94,7 @@ export default function SettingsPage() {
     <div className="max-w-3xl space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Настройки агентства</h1>
 
+      {isDirector && (
       <form onSubmit={onSubmit} className="space-y-4">
         <Card>
           <CardContent className="py-5 px-5 space-y-3">
@@ -214,6 +211,7 @@ export default function SettingsPage() {
           </Button>
         </div>
       </form>
+      )}
 
       <div className="pt-2">
         <NotificationSettingsCard />
