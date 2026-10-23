@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../../auth/AuthContext";
@@ -7,7 +7,7 @@ import { colors } from "../../theme/colors";
 import type { ProfileStackParamList } from "../common/ProfileStack";
 
 export function AnimatorProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, resetServer, serverUrl } = useAuth();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
@@ -33,6 +33,22 @@ export function AnimatorProfileScreen() {
         onPress={() => navigation.navigate("AboutAgency")}
       >
         <Text style={styles.linkButtonText}>🏢  О агентстве</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => {
+          Alert.alert(
+            "Сменить сервер?",
+            "Текущий сервер: " + (serverUrl || "не задан") + "\n\nВы выйдете из аккаунта и сможете указать новый адрес.",
+            [
+              { text: "Отмена", style: "cancel" },
+              { text: "Сменить", style: "destructive", onPress: () => resetServer() },
+            ]
+          );
+        }}
+      >
+        <Text style={styles.linkButtonText}>🔧 Сменить сервер</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={logout}>

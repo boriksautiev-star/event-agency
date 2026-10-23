@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { API_URL } from "../config/env";
+import { getServerUrlSync } from "../config/serverConfig";
 
 const ACCESS_KEY = "ea_access_token";
 const REFRESH_KEY = "ea_refresh_token";
@@ -60,12 +60,15 @@ export const tokenStore = {
 };
 
 export const api: AxiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: "",
   timeout: 15000,
   headers: { "Content-Type": "application/json" },
 });
 
 api.interceptors.request.use(async (config) => {
+  const url = getServerUrlSync();
+  if (!url) throw new Error("Server URL is not configured");
+  config.baseURL = url;
   const token = await tokenStore.getAccess();
   if (token) {
     config.headers = config.headers ?? {};
@@ -80,7 +83,9 @@ async function refreshAccessToken(): Promise<string | null> {
   const refresh = await tokenStore.getRefresh();
   if (!refresh) return null;
   try {
-    const { data } = await axios.post(`${API_URL}/api/auth/refresh`, {
+    const url = getServerUrlSync();
+    if (!url) return null;
+    const { data } = await axios.post(`${url}/api/auth/refresh`, {
       refreshToken: refresh,
     });
     await tokenStore.set(data.accessToken, data.refreshToken);

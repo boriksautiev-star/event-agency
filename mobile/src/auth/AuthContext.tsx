@@ -1,13 +1,18 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, tokenStore } from "../api/client";
+import { loadServerUrl, saveServerUrl, clearServerUrl } from "../config/serverConfig";
 import type { LoginResponse, User } from "../api/types";
 
 type AuthState = {
   user: User | null;
   loading: boolean;
+  serverUrl: string | null;
+  serverLoading: boolean;
   login: (phone: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
+  setServerUrl: (url: string) => Promise<void>;
+  resetServer: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -15,6 +20,8 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [serverUrl, setServerUrlState] = useState<string | null>(null);
+  const [serverLoading, setServerLoading] = useState(true);
 
   const refreshMe = useCallback(async () => {
     try {
@@ -27,11 +34,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const access = await tokenStore.getAccess();
-      if (access) await refreshMe();
+      const url = await loadServerUrl();
+      setServerUrlState(url);
+      setServerLoading(false);
+      if (url) {
+        const access = await tokenStore.getAccess();
+        if (access) await refreshMe();
+      }
       setLoading(false);
     })();
   }, [refreshMe]);
+
+  const setServerUrl = useCallback(async (url: string) => {
+    await saveServerUrl(url);
+    setServerUrlState(url);
+  }, []);
+
 
   const login = useCallback(async (phone: string, password: string) => {
     const { data } = await api.post<LoginResponse>("/api/auth/login", { phone, password });
@@ -61,9 +79,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, [user]);
 
+  const resetServer = useCallback(async () => {
+    await logout();
+    await clearServerUrl();
+    setServerUrlState(null);
+  }, [logout]);
+
+
   const value = useMemo(
-    () => ({ user, loading, login, logout, refreshMe }),
-    [user, loading, login, logout, refreshMe],
+    () => ({ user, loading, serverUrl, serverLoading, login, logout, refreshMe, setServerUrl, resetServer }),
+    [user, loading, serverUrl, serverLoading, login, logout, refreshMe, setServerUrl, resetServer],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
