@@ -234,7 +234,7 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 - PM2: `event-agency-api` online (id 10), health ok
 - Typecheck: shared, server, admin-web — чисто; mobile `npx tsc --noEmit` — чисто
 - Git: main = origin
-- HEAD: `3bfc5ff feat: add handovers statistics to animator report` (настройки уведомлений)
+- HEAD: `2a7fe38 feat: add handovers stats to mobile animator reports` (настройки уведомлений)
 
 **Сделано за сессию 2026-10-11..14:**
 1. HA1–HA4 (Handover): модель + API + push + cron + мобилка + admin-web
@@ -261,6 +261,9 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 22. **B6 FIXED:** удалён мёртвый permission `ORDERS_STATUS_OWN`
 23. **B7 FIXED:** добавлен `requirePermission` на роут `PATCH /:id/animators/:animatorId`
 24. **UX отчёта аниматора:** секция «Передачи заказов» (передал N, получил M, среднее время до approve) + история передач
+25. **G1 FIXED:** настройки уведомлений в мобилке (экран `NotificationSettingsScreen` в профиле)
+26. **G2 FIXED:** админ видит «Настройки» в admin-web (только блок уведомлений, без формы агентства)
+27. **G3 FIXED:** секция «Передачи заказов» в мобильных отчётах (аниматор + staff)
 
 ## 🚧 План на следующие сессии
 
