@@ -234,7 +234,7 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 - PM2: `event-agency-api` online (id 10), health ok
 - Typecheck: shared, server, admin-web — чисто; mobile `npx tsc --noEmit` — чисто
 - Git: main = origin
-- HEAD: `acde9f8 feat: unified history timeline (B3/B4)`
+- HEAD: `d7922ad chore: export notification events` (настройки уведомлений)
 
 **Сделано за сессию 2026-10-11..14:**
 1. HA1–HA4 (Handover): модель + API + push + cron + мобилка + admin-web
@@ -255,6 +255,9 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 16. **B1 FIXED:** валидация `ORDER_STATUS_FLOW` в `OrdersService.updateStatus` — `400 INVALID_STATUS_TRANSITION` на недопустимый переход
 17. **B8 FIXED:** FLOW расширен — `new → in_progress` разрешён (final-payment авто-промоутит заказ)
 18. **B3/B4 FIXED:** Единый таймлайн истории (StatusHistory + OrderChange) в admin-web и mobile + миграция `OrderStatusHistory.user` + `buildTimeline`
+19. **B5 FIXED:** Push-уведомление директору/админу при `assignment.completed` (отметка «Выполнен»)
+20. **Настройки уведомлений (NotificationSettings):** Модель БД + API (`GET/PUT /api/settings/notifications`) + UI в админке (тумблеры) + `NotificationService` как единая точка входа
+21. **Все пуши переведены на NotificationService:** `order_completed_by_animator`, `assignment_response`, `handover_pending_approval` теперь уважают настройки пользователей (с проверкой на `skipped`)
 
 ## 🚧 План на следующие сессии
 
@@ -264,7 +267,7 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
    - ✅ **B8** (fixed): `new → in_progress` разрешён
    - ⏳ **B3** (отложено, фронт): авто `new→confirmed` не пишет `OrderChange.field=status`
    - ⏳ **B4** (отложено, фронт): авто-фин.оплата пишет `field=finalPaymentReceived` вместо `status`
-   - ⏳ **B5** (отложено, UX): нет push директору при `assignment.completed`
+   - ✅ **B5** (fixed): push директору при `assignment.completed` + настройки уведомлений
    - ⏳ **B6** (отложено, minor): мёртвый permission `ORDERS_STATUS_OWN`
    - ⏳ **B7** (отложено, minor): `PATCH /:id/animators/:animatorId` без `requirePermission`
    **Рекомендация B3/B4:** не менять сервер, поправить фронт — показывать обе истории в одном таймлайне.
