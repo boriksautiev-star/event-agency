@@ -20,6 +20,7 @@ import adminPayrollRoutes from "./modules/admin-payroll/admin-payroll.routes";
 import handoverRoutes from "./modules/handover/handover.routes";
 import notificationSettingsRoutes from "./modules/notification-settings/notification-settings.routes";
 import licenseRoutes from "./license/license.routes";
+import { startBackupCheckJob } from "./jobs/backup-check.job";
 
 export function createApp() {
   const app = express();

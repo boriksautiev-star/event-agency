@@ -65,4 +65,20 @@ export class NotificationService {
       { requestId, orderId, type: "handover_pending_approval" },
     );
   }
+
+  static async notifyBackupMissing(
+    directorIds: string[],
+    lastBackupDate: string | null,
+  ) {
+    const body = lastBackupDate
+      ? `Последний успешный бэкап: ${lastBackupDate}. Проверьте планировщик.`
+      : "Успешных бэкапов ещё не было. Проверьте планировщик.";
+    return this.send(
+      "backup_missing",
+      directorIds,
+      "⚠️ Резервная копия не создана",
+      body,
+      { type: "backup_missing" },
+    );
+  }
 }
