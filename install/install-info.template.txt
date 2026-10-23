@@ -1,0 +1,47 @@
+================================================
+ Event Agency — информация об установке
+================================================
+
+Дата установки: {{INSTALL_DATE}}
+Путь установки: {{INSTALL_DIR}}
+Порт: {{PORT}}
+Домен (если настроен): {{DOMAIN}}
+
+--- Доступ к админ-панели ---
+URL: {{APP_URL}}
+
+--- База данных PostgreSQL ---
+Хост: localhost
+Порт: 5432
+База: event_agency
+Пользователь: event
+Пароль: {{DB_PASSWORD}}
+
+  ⚠️ СОХРАНИТЕ ЭТОТ ФАЙЛ. Пароль от БД нигде больше не хранится.
+  Файл находится в папке установки: {{INSTALL_DIR}}\install-info.txt
+
+--- Первый вход ---
+После установки откройте URL и пройдите первичную настройку
+(создание директора). Токен для setup: {{SETUP_TOKEN}}
+
+--- Windows-служба ---
+Имя: EventAgencyAPI
+Управление:
+  nssm status EventAgencyAPI
+  nssm restart EventAgencyAPI
+  nssm stop EventAgencyAPI
+  nssm start EventAgencyAPI
+
+--- Ежедневные бэкапы ---
+Task Scheduler: EventAgency-DB-Backup (каждый день в 03:00)
+Папка бэкапов: {{INSTALL_DIR}}\server\backups
+
+--- Лицензия ---
+Статус: {{LICENSE_STATUS}}
+Если не активирована — загрузите файл license.key через админку (Настройки → Лицензия).
+
+--- Обновление ---
+cd {{INSTALL_DIR}}
+powershell -ExecutionPolicy Bypass -File install\update.ps1
+
+================================================
