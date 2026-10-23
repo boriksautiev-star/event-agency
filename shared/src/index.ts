@@ -4,3 +4,4 @@ export * from "./orderStatus";
 export * from "./assignmentStatus";
 export * from "./transactionType";
 export * from "./rates";
+export * from "./notificationEvents";
