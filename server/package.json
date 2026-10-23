@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "main": "src/server.ts",
   "scripts": {
@@ -17,6 +17,7 @@
     "db:backups:list": "powershell -NoProfile -Command \"Get-ChildItem ./backups -Filter event_agency_*.dump -ErrorAction SilentlyContinue | Select-Object Name, @{N=SizeMB;E={[math]::Round($_.Length/1MB,2)}}, LastWriteTime | Format-Table -AutoSize\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1156.0",
     "@event-agency/shared": "*",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",

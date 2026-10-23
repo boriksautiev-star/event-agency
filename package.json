@@ -1,6 +1,6 @@
 {
   "name": "event-agency",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
     "shared",
@@ -26,5 +26,6 @@
   ],
   "engines": {
     "node": ">=20"
-  }
+  },
+  "description": "Платформа для управления ивент-агентством (self-hosted)"
 }
