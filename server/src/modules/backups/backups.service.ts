@@ -4,12 +4,15 @@ import { spawn } from "child_process";
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../utils/AppError";
 import { verifyPassword } from "../../utils/password";
+import { S3Service } from "./s3.service";
 
 const SERVER_DIR = path.resolve(__dirname, "../../..");
 const BACKUP_THRESHOLD_HOURS = 25;
 
-function getBackupDir(): string {
-  const envDir = process.env.BACKUP_DIR || "./backups";
+async function getBackupDir(): Promise<string> {
+  const settings = await prisma.agencySettings.findFirst();
+  const dbDir = settings?.backupDir;
+  const envDir = dbDir || process.env.BACKUP_DIR || "./backups";
   return path.isAbsolute(envDir) ? envDir : path.join(SERVER_DIR, envDir);
 }
 
@@ -76,7 +79,7 @@ export class BackupsService {
       ageHours: ageHours !== null ? Math.round(ageHours * 10) / 10 : null,
       isStale,
       thresholdHours: BACKUP_THRESHOLD_HOURS,
-      backupDir: getBackupDir(),
+      backupDir: (await getBackupDir()),
     };
   }
 
@@ -98,7 +101,7 @@ export class BackupsService {
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) throw new AppError("Неверный пароль", 403, "INVALID_PASSWORD");
 
-    const backupDir = getBackupDir();
+    const backupDir = (await getBackupDir());
     const filePath = path.join(backupDir, fileName);
     if (!fs.existsSync(filePath)) {
       throw new AppError("Файл бэкапа не найден на диске: " + fileName, 404, "FILE_NOT_FOUND");
@@ -117,5 +120,72 @@ export class BackupsService {
       filePath,
       message: "Safety-бэкап создан. Выполните команду на сервере (PowerShell):",
     };
+  }
+  static async getStorageSettings() {
+    const settings = await prisma.agencySettings.findFirst();
+    const backupDir = await getBackupDir();
+    const s3Targets = await S3Service.listMasked();
+    return { backupDir, s3Targets };
+  }
+
+  static async updateBackupDir(newDir: string) {
+    if (!newDir || typeof newDir !== "string") throw new AppError("Путь не указан", 400);
+    const absDir = path.isAbsolute(newDir) ? newDir : path.join(SERVER_DIR, newDir);
+    if (!fs.existsSync(absDir)) {
+      try { fs.mkdirSync(absDir, { recursive: true }); }
+      catch (e: any) { throw new AppError("Не удалось создать папку: " + e.message, 400); }
+    }
+    // Проверка прав записи
+    const testFile = path.join(absDir, ".write-test-" + Date.now());
+    try {
+      fs.writeFileSync(testFile, "test");
+      fs.unlinkSync(testFile);
+    } catch (e: any) {
+      throw new AppError("Нет прав на запись в папку: " + e.message, 400);
+    }
+    const settings = await prisma.agencySettings.findFirst();
+    if (!settings) throw new AppError("AgencySettings not found", 500);
+    await prisma.agencySettings.update({
+      where: { id: settings.id },
+      data: { backupDir: newDir },
+    });
+    return { ok: true, backupDir: absDir };
+  }
+
+  static async browseDir(dirPath: string | null): Promise<{
+    currentPath: string | null;
+    parent: string | null;
+    roots: { name: string; path: string }[];
+    items: { name: string; path: string }[];
+  }> {
+    // Без пути — список корневых дисков Windows
+    if (!dirPath) {
+      const roots: { name: string; path: string }[] = [];
+      for (const letter of "CDEFGHIJKLMNOPQRSTUVWXYZ") {
+        const p = letter + ":\\";
+        try {
+          if (fs.existsSync(p)) {
+            fs.readdirSync(p);
+            roots.push({ name: letter + ":", path: p });
+          }
+        } catch {}
+      }
+      return { currentPath: null, parent: null, roots, items: [] };
+    }
+
+    const absPath = path.resolve(dirPath);
+    if (!fs.existsSync(absPath)) throw new AppError("Папка не найдена", 404, "NOT_FOUND");
+    if (!fs.statSync(absPath).isDirectory()) throw new AppError("Это файл, не папка", 400, "NOT_DIR");
+
+    const entries = fs.readdirSync(absPath, { withFileTypes: true });
+    const items = entries
+      .filter((e) => e.isDirectory())
+      .map((e) => ({ name: e.name, path: path.join(absPath, e.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const parentPath = path.dirname(absPath);
+    const parent = parentPath === absPath ? null : parentPath;
+
+    return { currentPath: absPath, parent, roots: [], items };
   }
 }
