@@ -113,6 +113,8 @@ model AgencySettings {
 
   @@map("agency_settings")
   lastSeenAt DateTime? @map("last_seen_at")
+  backupDir  String? @map("backup_dir")
+  s3Targets  Json?   @map("s3_targets")
 }
 
 model Client {
@@ -580,4 +582,5 @@ model BackupLog {
 
   @@index([createdAt])
   @@map("backup_logs")
+  cloudStatus String? @map("cloud_status") // JSON: [{targetId, name, status, url, error}]
 }

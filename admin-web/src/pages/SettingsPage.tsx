@@ -9,6 +9,7 @@ import { Textarea } from "../components/ui/textarea";
 import { NotificationSettingsCard } from "../components/NotificationSettingsCard";
 import { LicenseCard } from "../components/LicenseCard";
 import { BackupsCard } from "../components/BackupsCard";
+import { StorageLocationCard } from "../components/StorageLocationCard";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -218,6 +219,12 @@ export default function SettingsPage() {
       {isDirector && (
         <div className="pt-2">
           <LicenseCard />
+        </div>
+      )}
+
+      {isDirector && (
+        <div className="pt-2">
+          <StorageLocationCard />
         </div>
       )}
 

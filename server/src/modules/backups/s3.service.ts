@@ -5,7 +5,7 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { prisma } from "../../db/prisma";
-import { decrypt } from "../../utils/crypto";
+import { decrypt, encrypt, maskSecret } from "../../utils/crypto";
 
 export type S3Target = {
   id: string;
@@ -130,5 +130,113 @@ export class S3Service {
     const enabled = targets.filter((t) => t.enabled);
     if (enabled.length === 0) return [];
     return Promise.all(enabled.map((t) => this.uploadFile(t, filePath, fileName)));
+  }
+  /** Возвращает таргеты без секретов (для UI). */
+  static async listMasked(): Promise<any[]> {
+    const targets = await this.getTargets();
+    return targets.map((t) => ({
+      id: t.id,
+      name: t.name,
+      enabled: t.enabled,
+      endpoint: t.endpoint,
+      region: t.region,
+      bucket: t.bucket,
+      accessKey: t.accessKey ? maskSecret(t.accessKey) : "",
+      secretKeyMasked: t.secretKey ? maskSecret(t.secretKey) : "",
+      pathPrefix: t.pathPrefix,
+      retentionDays: t.retentionDays,
+    }));
+  }
+
+  /** Сохраняет новый таргет. */
+  static async addTarget(input: any) {
+    const settings = await prisma.agencySettings.findFirst();
+    if (!settings) throw new Error("AgencySettings not found");
+    const current: any[] = Array.isArray(settings.s3Targets) ? (settings.s3Targets as any[]) : [];
+    const id = require("crypto").randomUUID();
+    const target = {
+      id,
+      name: input.name,
+      enabled: input.enabled !== false,
+      endpoint: input.endpoint || "",
+      region: input.region || "us-east-1",
+      bucket: input.bucket,
+      accessKey: input.accessKey,
+      secretKey: input.secretKey ? encrypt(input.secretKey) : "",
+      pathPrefix: input.pathPrefix || "",
+      retentionDays: input.retentionDays ?? 90,
+    };
+    await prisma.agencySettings.update({
+      where: { id: settings.id },
+      data: { s3Targets: [...current, target] as any },
+    });
+    return { id };
+  }
+
+  /** Обновляет существующий таргет. */
+  static async updateTarget(id: string, input: any) {
+    const settings = await prisma.agencySettings.findFirst();
+    if (!settings) throw new Error("AgencySettings not found");
+    const current: any[] = Array.isArray(settings.s3Targets) ? (settings.s3Targets as any[]) : [];
+    const idx = current.findIndex((t) => t.id === id);
+    if (idx === -1) throw new Error("Target not found");
+    const old = current[idx];
+    const updated = {
+      ...old,
+      name: input.name ?? old.name,
+      enabled: input.enabled ?? old.enabled,
+      endpoint: input.endpoint ?? old.endpoint,
+      region: input.region ?? old.region,
+      bucket: input.bucket ?? old.bucket,
+      accessKey: input.accessKey ?? old.accessKey,
+      pathPrefix: input.pathPrefix ?? old.pathPrefix,
+      retentionDays: input.retentionDays ?? old.retentionDays,
+      secretKey: input.secretKey ? encrypt(input.secretKey) : old.secretKey,
+    };
+    const next = [...current];
+    next[idx] = updated;
+    await prisma.agencySettings.update({
+      where: { id: settings.id },
+      data: { s3Targets: next as any },
+    });
+    return { ok: true };
+  }
+
+  /** Удаляет таргет. */
+  static async deleteTarget(id: string) {
+    const settings = await prisma.agencySettings.findFirst();
+    if (!settings) throw new Error("AgencySettings not found");
+    const current: any[] = Array.isArray(settings.s3Targets) ? (settings.s3Targets as any[]) : [];
+    const next = current.filter((t) => t.id !== id);
+    await prisma.agencySettings.update({
+      where: { id: settings.id },
+      data: { s3Targets: next as any },
+    });
+    return { ok: true };
+  }
+
+  /** Тест неподтверждённого таргета (из формы). */
+  static async testUncommitted(input: any): Promise<{ ok: boolean; error?: string }> {
+    const target: S3Target = {
+      id: "temp",
+      name: input.name || "temp",
+      enabled: true,
+      endpoint: input.endpoint || "",
+      region: input.region || "us-east-1",
+      bucket: input.bucket,
+      accessKey: input.accessKey,
+      secretKey: input.secretKey,
+      pathPrefix: input.pathPrefix || "",
+      retentionDays: 1,
+    };
+    return this.testTarget(target);
+  }
+
+  /** Тест сохранённого таргета. */
+  static async testSaved(id: string): Promise<{ ok: boolean; error?: string }> {
+    const targets = await this.getTargets();
+    const target = targets.find((t) => t.id === id);
+    if (!target) return { ok: false, error: "Target not found" };
+    return this.testTarget(target);
   }
 }
