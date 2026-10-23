@@ -234,7 +234,7 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 - PM2: `event-agency-api` online (id 10), health ok
 - Typecheck: shared, server, admin-web — чисто; mobile `npx tsc --noEmit` — чисто
 - Git: main = origin
-- HEAD: `d7922ad chore: export notification events` (настройки уведомлений)
+- HEAD: `3bfc5ff feat: add handovers statistics to animator report` (настройки уведомлений)
 
 **Сделано за сессию 2026-10-11..14:**
 1. HA1–HA4 (Handover): модель + API + push + cron + мобилка + admin-web
@@ -258,6 +258,9 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 19. **B5 FIXED:** Push-уведомление директору/админу при `assignment.completed` (отметка «Выполнен»)
 20. **Настройки уведомлений (NotificationSettings):** Модель БД + API (`GET/PUT /api/settings/notifications`) + UI в админке (тумблеры) + `NotificationService` как единая точка входа
 21. **Все пуши переведены на NotificationService:** `order_completed_by_animator`, `assignment_response`, `handover_pending_approval` теперь уважают настройки пользователей (с проверкой на `skipped`)
+22. **B6 FIXED:** удалён мёртвый permission `ORDERS_STATUS_OWN`
+23. **B7 FIXED:** добавлен `requirePermission` на роут `PATCH /:id/animators/:animatorId`
+24. **UX отчёта аниматора:** секция «Передачи заказов» (передал N, получил M, среднее время до approve) + история передач
 
 ## 🚧 План на следующие сессии
 
