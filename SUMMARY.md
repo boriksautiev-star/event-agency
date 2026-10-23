@@ -242,11 +242,20 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 
 ## 📌 ТЕКУЩИЙ СТАТУС (на 2026-10-14, вечер)
 
+**🎉 ВЕРСИЯ 1.0.0 — ГОТОВА К ПРОДАЖЕ (2026-10-23)**
+
+**Всё реализовано:**
+- Backend, admin-web, mobile — все системы
+- Лицензирование (оффлайн JWT, grace period)
+- Бэкапы (локальные + S3, ежедневно)
+- Установка одной командой на Windows Server
+- Документация (README, INSTALL, ADMIN-GUIDE, CHANGELOG, LICENSE)
+
 **Работает:**
 - PM2: `event-agency-api` online (id 10), health ok
 - Typecheck: shared, server, admin-web — чисто; mobile `npx tsc --noEmit` — чисто
 - Git: main = origin
-- HEAD: `5323370 feat(mobile): server URL setup screen (M2.1)`
+- HEAD: `7ce6740 feat(backups): S3 storage settings` (v1.0.0, публикация M2 завершена)
 
 **Сделано за сессию 2026-10-11..14:**
 1. HA1–HA4 (Handover): модель + API + push + cron + мобилка + admin-web
