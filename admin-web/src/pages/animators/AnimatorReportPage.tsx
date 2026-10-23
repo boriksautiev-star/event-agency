@@ -208,6 +208,80 @@ export default function AnimatorReportPage() {
             </Card>
           ) : null}
 
+          {/* Передачи заказов */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Передачи заказов</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <Metric
+                  value={String(data.handovers.passedCount)}
+                  label="Передал другому"
+                  color="primary"
+                />
+                <Metric
+                  value={String(data.handovers.receivedCount)}
+                  label="Получил от другого"
+                  color="primary"
+                />
+                <Metric
+                  value={data.handovers.avgHoursToApprove > 0 ? `${data.handovers.avgHoursToApprove} ч` : "—"}
+                  label="Среднее время до подтверждения"
+                  color="primary"
+                />
+              </div>
+
+              {data.handoverHistory.length > 0 ? (
+                <div className="border-t border-gray-100 pt-3">
+                  <div className="text-xs font-semibold text-gray-500 mb-2">История передач</div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[140px]">Когда запрошено</TableHead>
+                        <TableHead>Заказ</TableHead>
+                        <TableHead className="w-[110px]">Роль</TableHead>
+                        <TableHead className="w-[140px]">Подтверждено</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.handoverHistory.map((h) => (
+                        <TableRow key={h.id}>
+                          <TableCell className="whitespace-nowrap text-sm text-gray-700">
+                            {formatDateTime(h.requestedAt)}
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              to={`/orders/${h.orderId}`}
+                              className="text-sm text-gray-800 hover:text-primary transition"
+                            >
+                              {h.orderTitle}
+                            </Link>
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              {formatDate(h.eventDate)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={h.role === "from" ? "alert" : "success"}>
+                              {h.role === "from" ? "Передал" : "Получил"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-sm text-gray-700">
+                            {h.resolvedAt ? formatDateTime(h.resolvedAt) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 py-2">
+                  Передач за период не было
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* История расставаний */}
           <Card>
             <CardHeader>

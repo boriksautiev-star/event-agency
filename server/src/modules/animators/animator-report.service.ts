@@ -173,9 +173,58 @@ export class AnimatorReportService {
     const acceptRate =
       offersCount > 0 ? +((acceptedCount / offersCount) * 100).toFixed(1) : 0;
 
+    // B (UX отчёта): статистика по передачам
+    const handoversFromRaw = await prisma.handoverRequest.findMany({
+      where: {
+        fromAnimatorId: animatorId,
+        status: "approved",
+        requestedAt: { gte: from, lte: to },
+      },
+      select: {
+        id: true, orderId: true, requestedAt: true, resolvedAt: true,
+        order: { select: { title: true, eventDate: true } },
+      },
+    });
+    const handoversToRaw = await prisma.handoverRequest.findMany({
+      where: {
+        toAnimatorId: animatorId,
+        status: "approved",
+        requestedAt: { gte: from, lte: to },
+      },
+      select: {
+        id: true, orderId: true, requestedAt: true, resolvedAt: true,
+        order: { select: { title: true, eventDate: true } },
+      },
+    });
+    const allHandovers = [
+      ...handoversFromRaw.map((h) => ({ ...h, role: "from" as const })),
+      ...handoversToRaw.map((h) => ({ ...h, role: "to" as const })),
+    ];
+    const approvedWithTime = allHandovers.filter((h) => h.resolvedAt);
+    const avgHoursToApprove = approvedWithTime.length > 0
+      ? +(approvedWithTime.reduce((s, h) => s + (+h.resolvedAt! - +h.requestedAt), 0) / approvedWithTime.length / 3600000).toFixed(1)
+      : 0;
+    const handoversStats = {
+      passedCount: handoversFromRaw.length,
+      receivedCount: handoversToRaw.length,
+      avgHoursToApprove,
+    };
+    const handoverHistory = allHandovers
+      .map((h) => ({
+        id: h.id,
+        orderId: h.orderId,
+        orderTitle: h.order.title,
+        eventDate: h.order.eventDate,
+        role: h.role,
+        requestedAt: h.requestedAt,
+        resolvedAt: h.resolvedAt,
+      }))
+      .sort((a, b) => +b.requestedAt - +a.requestedAt);
     return {
       period: { from: query.from, to: query.to },
       scope: query.scope ?? "all",
+      handovers: handoversStats,
+      handoverHistory,
       summary: {
         ordersCount: summary.ordersCount,
         hours: +summary.hours.toFixed(2),
