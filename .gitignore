@@ -95,3 +95,6 @@ server/license.key
 
 # Backups
 server/backups/
+
+# Release ZIP archives
+releases/
