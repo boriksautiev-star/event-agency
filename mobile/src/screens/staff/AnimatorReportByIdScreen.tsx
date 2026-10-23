@@ -189,6 +189,40 @@ export function AnimatorReportByIdScreen() {
             ) : null}
           </View>
 
+          {report.handovers && (report.handovers.passedCount > 0 || report.handovers.receivedCount > 0) ? (
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>Передачи заказов</Text>
+              <View style={styles.metricsRow}>
+                <View style={styles.metric}>
+                  <Text style={styles.metricValue}>{report.handovers.passedCount}</Text>
+                  <Text style={styles.metricLabel}>Передал</Text>
+                </View>
+                <View style={styles.metric}>
+                  <Text style={styles.metricValue}>{report.handovers.receivedCount}</Text>
+                  <Text style={styles.metricLabel}>Получил</Text>
+                </View>
+                <View style={styles.metric}>
+                  <Text style={styles.metricValue}>
+                    {report.handovers.avgHoursToApprove > 0 ? `${report.handovers.avgHoursToApprove} ч` : "—"}
+                  </Text>
+                  <Text style={styles.metricLabel}>Ср. время</Text>
+                </View>
+              </View>
+              {report.handoverHistory.length > 0 && (
+                <View style={{ marginTop: 10 }}>
+                  {report.handoverHistory.slice(0, 5).map(h => (
+                    <View key={h.id} style={styles.totalRow}>
+                      <Text style={{ fontSize: 13, color: colors.text, flex: 1 }} numberOfLines={1}>{h.orderTitle}</Text>
+                      <Text style={{ fontSize: 12, color: h.role === 'from' ? colors.warning : colors.success }}>
+                        {h.role === 'from' ? 'Передал' : 'Получил'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ) : null}
+
           {report.summary.offersCount > 0 ? (
             <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>Разбивка по причинам</Text>

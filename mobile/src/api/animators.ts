@@ -50,6 +50,20 @@ export type AnimatorReport = {
   };
   releases: AnimatorRelease[];
   items: AnimatorReportItem[];
+  handovers: {
+    passedCount: number;
+    receivedCount: number;
+    avgHoursToApprove: number;
+  };
+  handoverHistory: {
+    id: string;
+    orderId: string;
+    orderTitle: string;
+    eventDate: string;
+    role: "from" | "to";
+    requestedAt: string;
+    resolvedAt: string | null;
+  }[];
 };
 
 export async function fetchAnimatorReport(
