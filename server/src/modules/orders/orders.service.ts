@@ -1171,7 +1171,7 @@ export class OrdersService {
         if (order?.createdBy) adminIds.push(order.createdBy);
         if (adminIds.length > 0) {
           const animatorName = `${updated.animator.firstName} ${updated.animator.lastName}`;
-          await PushService.notifyAdminsAboutResponse(
+          await NotificationService.notifyAdminsAboutResponse(
             adminIds,
             animatorName,
             order?.title ?? "Заказ",

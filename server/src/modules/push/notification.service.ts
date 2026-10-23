@@ -33,4 +33,36 @@ export class NotificationService {
       { orderId, type: "order_completed_by_animator" },
     );
   }
+  static async notifyAdminsAboutResponse(
+    adminIds: string[],
+    animatorName: string,
+    orderTitle: string,
+    orderId: string,
+    status: "accepted" | "declined",
+  ) {
+    const verb = status === "accepted" ? "принял(а)" : "отклонил(а)";
+    return this.send(
+      "assignment_response",
+      adminIds,
+      "Ответ аниматора",
+      `${animatorName} ${verb} заказ: ${orderTitle}`,
+      { orderId, type: "assignment_response" },
+    );
+  }
+
+  static async notifyHandoverPendingApproval(
+    adminIds: string[],
+    toName: string,
+    orderTitle: string,
+    requestId: string,
+    orderId: string,
+  ) {
+    return this.send(
+      "handover_pending_approval",
+      adminIds,
+      "Передача ждёт подтверждения",
+      `${toName} принял(а) передачу заказа: ${orderTitle}`,
+      { requestId, orderId, type: "handover_pending_approval" },
+    );
+  }
 }

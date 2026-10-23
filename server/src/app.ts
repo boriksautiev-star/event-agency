@@ -18,6 +18,7 @@ import ratesRoutes from "./modules/rates/rates.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
 import adminPayrollRoutes from "./modules/admin-payroll/admin-payroll.routes";
 import handoverRoutes from "./modules/handover/handover.routes";
+import notificationSettingsRoutes from "./modules/notification-settings/notification-settings.routes";
 
 export function createApp() {
   const app = express();
@@ -29,7 +30,9 @@ export function createApp() {
     res.json({ name: "Event Agency API", version: "0.0.1" });
   });
 
-  app.use("/api/health", healthRoutes);
+  app.use("/api/settings/notifications", notificationSettingsRoutes);
+
+app.use("/api/health", healthRoutes);
   app.use("/api/setup", setupRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/users", usersRoutes);

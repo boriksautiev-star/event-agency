@@ -7,6 +7,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent } from "../components/ui/card";
 import { Textarea } from "../components/ui/textarea";
+import { NotificationSettingsCard } from "../components/NotificationSettingsCard";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -213,6 +214,10 @@ export default function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      <div className="pt-2">
+        <NotificationSettingsCard />
+      </div>
     </div>
   );
 }
