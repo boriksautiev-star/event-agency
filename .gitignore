@@ -89,3 +89,6 @@ reject-*.ps1
 server/license/private.pem
 *.pem.private
 license-*.key
+
+# Клиентский файл лицензии (уникальный для каждой установки)
+server/license.key
