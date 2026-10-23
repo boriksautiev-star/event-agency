@@ -20,7 +20,7 @@ router.patch("/:id/slots/:slotId", requireAuth, requirePermission(PERMISSIONS.OR
 router.delete("/:id/slots/:slotId", requireAuth, requirePermission(PERMISSIONS.ORDERS_ASSIGN), OrdersController.removeSlot);
 
 router.post("/:id/animators", requireAuth, requirePermission(PERMISSIONS.ORDERS_ASSIGN), OrdersController.assignAnimator);
-router.patch("/:id/animators/:animatorId", requireAuth, OrdersController.updateAssignment);
+router.patch("/:id/animators/:animatorId", requireAuth, requirePermission(PERMISSIONS.ORDERS_READ), OrdersController.updateAssignment);
 router.patch("/:id/animators/:animatorId/transport", requireAuth, OrdersController.updateTransport);
 
 // ===== Передача заказа (handover) на конкретном слоте =====

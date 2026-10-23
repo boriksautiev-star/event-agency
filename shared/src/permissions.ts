@@ -4,7 +4,6 @@ export const PERMISSIONS = {
   ORDERS_READ: "orders:read",
   ORDERS_WRITE: "orders:write",
   ORDERS_ASSIGN: "orders:assign",
-  ORDERS_STATUS_OWN: "orders:status:own",
   CLIENTS_READ: "clients:read",
   CLIENTS_WRITE: "clients:write",
   USERS_READ: "users:read",
@@ -59,7 +58,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   animator: [
     PERMISSIONS.ORDERS_READ,
-    PERMISSIONS.ORDERS_STATUS_OWN,
     PERMISSIONS.SETTINGS_READ,
   ],
 };
