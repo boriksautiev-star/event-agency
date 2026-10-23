@@ -250,12 +250,13 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 - Бэкапы (локальные + S3, ежедневно)
 - Установка одной командой на Windows Server
 - Документация (README, INSTALL, ADMIN-GUIDE, CHANGELOG, LICENSE)
+- Дистрибуция: `build-release.ps1` (ZIP) + `build-apk.ps1` (release APK с keystore)
 
 **Работает:**
 - PM2: `event-agency-api` online (id 10), health ok
 - Typecheck: shared, server, admin-web — чисто; mobile `npx tsc --noEmit` — чисто
 - Git: main = origin
-- HEAD: `7ce6740 feat(backups): S3 storage settings` (v1.0.0, публикация M2 завершена)
+- HEAD: см. `git log --oneline -3` (v1.0.0 + release files)
 
 **Сделано за сессию 2026-10-11..14:**
 1. HA1–HA4 (Handover): модель + API + push + cron + мобилка + admin-web
