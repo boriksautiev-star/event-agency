@@ -218,6 +218,18 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 32. После каждого блока: `git add -A && git status --short && git commit && git push`
 33. `.gitignore`: firebase-admin-key.json, credentials.json, google-services.json, `server/.env`, `mobile/android/`, `scaffold-*.js`, `patch-*.js`, `/*.ps1`, `setup-*.ps1`, `test-*.ps1`, `diag*.ps1`, `*-handover.ps1`, `create-*.ps1`, `approve-*.ps1`, `accept-*.ps1`, `reject-*.ps1`, CLAUDE.md, AGENTS.md
 
+
+## 🔐 Система лицензирования (2026-10-23)
+
+**Модель:** Self-hosted, каждая установка = отдельный сервер с лицензией.
+**Формат:** RS256 JWT в файле `license.key` (рядом с `server/.env`).
+**Ключи:** RSA-пара 2048 бит. `private.pem` — у владельца продукта (`D:\Projects\event-agency-license\`, НЕ в git). `public.pem` — вшит в код (`server/src/license/public.pem`).
+**Выпуск:** `node issue-license.js --name "Агентство" --months 12` → файл `license_<name>_<date>.key` → передать клиенту.
+**Статусы:** `active` (>30 дн), `expiring` (≤30 дн), `grace` (истёк, ≤10 дн), `expired` (>10 дн), `invalid` (битая подпись/откат времени), `none` (нет файла).
+**Блокировка:** при `expired`/`invalid` — POST /api/orders → 403 LICENSE_EXPIRED. Создание запрещено, чтение разрешено.
+**Защита от отката времени:** `AgencySettings.lastSeenAt` — при старте пишем now, при проверке если `now < lastSeenAt` → `invalid`.
+**Загрузка через UI:** директор в admin-web → Настройки → Лицензия → файл .key → POST /api/license/upload.
+
 ## 🎨 Стиль работы с пользователем
 
 - Программирует сам, читает код, копирует скрипты целиком
@@ -234,7 +246,7 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 - PM2: `event-agency-api` online (id 10), health ok
 - Typecheck: shared, server, admin-web — чисто; mobile `npx tsc --noEmit` — чисто
 - Git: main = origin
-- HEAD: `2a7fe38 feat: add handovers stats to mobile animator reports` (настройки уведомлений)
+- HEAD: см. `git log --oneline -3` (система лицензирования) (настройки уведомлений)
 
 **Сделано за сессию 2026-10-11..14:**
 1. HA1–HA4 (Handover): модель + API + push + cron + мобилка + admin-web
@@ -264,10 +276,14 @@ Cleanup в seed (порядок важен): `handoverRequest`, `orderChange`, `
 25. **G1 FIXED:** настройки уведомлений в мобилке (экран `NotificationSettingsScreen` в профиле)
 26. **G2 FIXED:** админ видит «Настройки» в admin-web (только блок уведомлений, без формы агентства)
 27. **G3 FIXED:** секция «Передачи заказов» в мобильных отчётах (аниматор + staff)
+28. **ЛИЦЕНЗИРОВАНИЕ (MVP):** RS256 JWT-лицензии, файл `license.key`, grace period 10 дней, защита от отката времени (`lastSeenAt`), блокировка создания заказов при истечении
+29. **Лицензии UI:** баннер в `AppLayout` (жёлтый при `< 30 дней`, красный при grace/expired), карточка в Настройках с загрузкой `.key`
+30. **Инструмент выпуска лицензий:** `D:\Projects\event-agency-license\issue-license.js` (вне репо), RSA-ключи в `D:\Projects\event-agency-license\`
 
 ## 🚧 План на следующие сессии
 
 ### Ближайшее (сегодня/завтра)
+0. **💾 Бэкапы БД** — pg_dump + Task Scheduler + ротация 30 дней + restore-скрипт
 1. **✅ Аудит логики статусов заказа** — ЗАВЕРШЁН 14.10. Найдено 7 багов:
    - ✅ **B1** (fixed): FLOW не валидировался сервером
    - ✅ **B8** (fixed): `new → in_progress` разрешён
