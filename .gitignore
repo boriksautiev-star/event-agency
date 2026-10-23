@@ -92,3 +92,6 @@ license-*.key
 
 # Клиентский файл лицензии (уникальный для каждой установки)
 server/license.key
+
+# Backups
+server/backups/

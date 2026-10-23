@@ -11,7 +11,10 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:backup": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/backup-db.ps1",
+    "db:restore": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/restore-db.ps1",
+    "db:backups:list": "powershell -NoProfile -Command \"Get-ChildItem ./backups -Filter event_agency_*.dump -ErrorAction SilentlyContinue | Select-Object Name, @{N=SizeMB;E={[math]::Round($_.Length/1MB,2)}}, LastWriteTime | Format-Table -AutoSize\""
   },
   "dependencies": {
     "@event-agency/shared": "*",

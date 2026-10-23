@@ -566,3 +566,18 @@ model HandoverRequest {
   @@index([toAnimatorId, status])
   @@map("handover_requests")
 }
+
+model BackupLog {
+  id          String   @id @default(uuid())
+  fileName    String   @map("file_name")
+  filePath    String   @map("file_path")
+  sizeBytes   Int      @default(0) @map("size_bytes")
+  status      String
+  errorMsg    String?  @map("error_msg")
+  durationMs  Int?     @map("duration_ms")
+  triggeredBy String   @default("manual") @map("triggered_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("backup_logs")
+}
