@@ -2,6 +2,7 @@ import { prisma } from "../../db/prisma";
 import { AppError } from "../../utils/AppError";
 import { RatesService } from "../rates/rates.service";
 import { PushService } from "../push/push.service";
+import { NotificationService } from "../push/notification.service";
 import {
   CreateHandoverInput,
   RejectHandoverInput,
@@ -354,13 +355,29 @@ export class HandoverService {
 
     try {
       const toName = `${updated.toAnimator.firstName} ${updated.toAnimator.lastName}`.trim();
-      await PushService.notifyHandoverAccepted(
-        updated.fromAnimatorId,
-        toName,
-        updated.order.title,
-        updated.id,
-        updated.orderId,
-      );
+      // Пуш отправителю (аниматору) напрямую, без настроек
+      await PushService.send({
+        userIds: [updated.fromAnimatorId],
+        title: "Передача: согласие получено",
+        body: `Согласие получено. Ждём подтверждения руководителя: ${updated.order.title}`,
+        data: { requestId: updated.id, orderId: updated.orderId, type: "handover_accepted_to_from" },
+      });
+
+      // Пуш админам через NotificationService (с учётом настроек)
+      const admins = await prisma.user.findMany({
+        where: { role: { in: ["director", "admin"] }, status: "active" },
+        select: { id: true },
+      });
+      const adminIds = admins.map((u) => u.id);
+      if (adminIds.length > 0) {
+        await NotificationService.notifyHandoverPendingApproval(
+          adminIds,
+          toName,
+          updated.order.title,
+          updated.id,
+          updated.orderId,
+        );
+      }
     } catch (e) {
       console.warn("[handover] push notifyHandoverAccepted failed:", e);
     }
